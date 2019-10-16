@@ -1,0 +1,7 @@
+ PDE=CNVD
+ Epsilon=   1.0000000000000001E-005
+ Boundary Layer Problem?  Y
+ Do you use enriching functions?  Y
+ Do you Apply any special type of mesh refinement?  NA
+ Do you impose zero boundary condition?  N
+ DOF - BD_DOF  ORDER  MAX.  L2  ENRG

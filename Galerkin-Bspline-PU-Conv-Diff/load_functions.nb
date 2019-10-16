@@ -1,0 +1,279 @@
+(* Content-type: application/mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 7.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       145,          7]
+NotebookDataLength[      7533,        270]
+NotebookOptionsPosition[      6773,        238]
+NotebookOutlinePosition[      7111,        253]
+CellTagsIndexPosition[      7068,        250]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"u", "=", 
+   RowBox[{"1", "-", 
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"x", "^", "2"}], "+", 
+      RowBox[{"y", "^", "2"}]}], ")"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"-", "e"}], "*", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"D", "[", 
+      RowBox[{"u", ",", 
+       RowBox[{"{", 
+        RowBox[{"x", ",", "2"}], "}"}]}], "]"}], "+", 
+     RowBox[{"D", "[", 
+      RowBox[{"u", ",", 
+       RowBox[{"{", 
+        RowBox[{"y", ",", "2"}], "}"}]}], "]"}]}], ")"}]}], "-", 
+  RowBox[{"D", "[", 
+   RowBox[{"u", ",", 
+    RowBox[{"{", 
+     RowBox[{"y", ",", "1"}], "}"}]}], "]"}]}]}], "Input",
+ CellChangeTimes->{{3.636925794357626*^9, 3.636925834068252*^9}, {
+  3.636925896866221*^9, 3.636925906443422*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"4", " ", "e"}], "+", 
+  RowBox[{"2", " ", "y"}]}]], "Output",
+ CellChangeTimes->{3.636925914947531*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"Clear", ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"u", "=", 
+   RowBox[{
+    RowBox[{"x", "^", "2"}], "*", 
+    RowBox[{"y", "^", "2"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"lv", "=", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"-", "e"}], "*", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"D", "[", 
+        RowBox[{"u", ",", 
+         RowBox[{"{", 
+          RowBox[{"x", ",", "2"}], "}"}]}], "]"}], "+", 
+       RowBox[{"D", "[", 
+        RowBox[{"u", ",", 
+         RowBox[{"{", 
+          RowBox[{"y", ",", "2"}], "}"}]}], "]"}]}], ")"}]}], "-", 
+    RowBox[{"D", "[", 
+     RowBox[{"u", ",", 
+      RowBox[{"{", 
+       RowBox[{"y", ",", "1"}], "}"}]}], "]"}]}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"FortranForm", "[", 
+  RowBox[{"Simplify", "[", "lv", "]"}], "]"}]}], "Input",
+ CellChangeTimes->{{3.63692598349222*^9, 3.636926007245494*^9}, {
+  3.636926216504613*^9, 3.636926229814512*^9}, {3.636926261635889*^9, 
+  3.63692626618114*^9}}],
+
+Cell["-2*(x**2*y + e*(x**2 + y**2))", "Output",
+ CellChangeTimes->{3.636926009040562*^9, 3.636926233259068*^9, 
+  3.636926267009573*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"Clear", ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"u", "=", 
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{"1", "-", 
+      RowBox[{"Sqrt", "[", 
+       RowBox[{
+        RowBox[{"x", "^", "2"}], "+", 
+        RowBox[{"y", "^", "2"}]}], "]"}]}], ")"}], "*", 
+    RowBox[{"x", "^", "2"}], "*", 
+    RowBox[{"y", "^", "2"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"lv", "=", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"-", "e"}], "*", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"D", "[", 
+        RowBox[{"u", ",", 
+         RowBox[{"{", 
+          RowBox[{"x", ",", "2"}], "}"}]}], "]"}], "+", 
+       RowBox[{"D", "[", 
+        RowBox[{"u", ",", 
+         RowBox[{"{", 
+          RowBox[{"y", ",", "2"}], "}"}]}], "]"}]}], ")"}]}], "-", 
+    RowBox[{"D", "[", 
+     RowBox[{"u", ",", 
+      RowBox[{"{", 
+       RowBox[{"y", ",", "1"}], "}"}]}], "]"}]}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"FortranForm", "[", 
+  RowBox[{"Simplify", "[", "lv", "]"}], "]"}]}], "Input",
+ CellChangeTimes->{{3.636926416191452*^9, 3.636926452435716*^9}}],
+
+Cell["\<\
+        (x**2*y*(2*x**2 + 3*y**2 - 2*Sqrt(x**2 + y**2)) + 
+     -    e*(2*x**4 + 2*y**4 - 2*y**2*Sqrt(x**2 + y**2) + 
+     -       x**2*(13*y**2 - 2*Sqrt(x**2 + y**2))))/
+     -  Sqrt(x**2 + y**2)\
+\>", "Output",
+ CellChangeTimes->{3.636926452864311*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"Clear", ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"u", "=", 
+   RowBox[{"1", "-", 
+    RowBox[{"Exp", "[", 
+     RowBox[{
+      RowBox[{"Sin", "[", 
+       RowBox[{"2", "*", "Pi", "*", "x"}], "]"}], "*", 
+      RowBox[{"y", "/", "e"}]}], "]"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", 
+   RowBox[{"FortranForm", "[", 
+    RowBox[{"Simplify", "[", 
+     RowBox[{"D", "[", 
+      RowBox[{"u", ",", 
+       RowBox[{"{", 
+        RowBox[{"x", ",", "1"}], "}"}]}], "]"}], "]"}], "]"}], "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", 
+   RowBox[{"FortranForm", "[", 
+    RowBox[{"Simplify", "[", 
+     RowBox[{"D", "[", 
+      RowBox[{"u", ",", 
+       RowBox[{"{", 
+        RowBox[{"y", ",", "1"}], "}"}]}], "]"}], "]"}], "]"}], "]"}], 
+  ";"}], "\[IndentingNewLine]"}], "Input",
+ CellChangeTimes->{{3.636973700194522*^9, 3.636973772876636*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"-", "2"}], "*", 
+      RowBox[{"E", "**", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{"y", "*", "Sin", 
+           RowBox[{"(", 
+            RowBox[{"2", "*", "Pi", "*", "x"}], ")"}]}], ")"}], "/", "e"}], 
+        ")"}]}], "*", "Pi", "*", "y", "*", "Cos", 
+      RowBox[{"(", 
+       RowBox[{"2", "*", "Pi", "*", "x"}], ")"}]}], ")"}], "/", "e"}],
+   ShowStringCharacters->True,
+   NumberMarks->True],
+  FortranForm[(-2) $CellContext`e^(-1) 
+   E^($CellContext`e^(-1) $CellContext`y Sin[2 Pi $CellContext`x]) 
+   Pi $CellContext`y Cos[2 Pi $CellContext`x]],
+  AutoDelete->True,
+  Editable->True]], "Print",
+ CellChangeTimes->{3.636973781047213*^9}],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   RowBox[{"-", 
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"E", "**", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{"y", "*", "Sin", 
+             RowBox[{"(", 
+              RowBox[{"2", "*", "Pi", "*", "x"}], ")"}]}], ")"}], "/", "e"}], 
+          ")"}]}], "*", "Sin", 
+        RowBox[{"(", 
+         RowBox[{"2", "*", "Pi", "*", "x"}], ")"}]}], ")"}], "/", "e"}], 
+     ")"}]}],
+   ShowStringCharacters->True,
+   NumberMarks->True],
+  FortranForm[-$CellContext`e^(-1) 
+   E^($CellContext`e^(-1) $CellContext`y Sin[2 Pi $CellContext`x]) 
+   Sin[2 Pi $CellContext`x]],
+  AutoDelete->True,
+  Editable->True]], "Print",
+ CellChangeTimes->{3.636973781085846*^9}]
+}, Open  ]]
+}, Open  ]],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.636976845453762*^9, 3.636976850369392*^9}}]
+},
+WindowSize->{640, 623},
+WindowMargins->{{Automatic, 181}, {14, Automatic}},
+FrontEndVersion->"7.0 for Linux x86 (32-bit) (February 25, 2009)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[567, 22, 787, 26, 55, "Input"],
+Cell[1357, 50, 138, 4, 31, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1532, 59, 1007, 31, 99, "Input"],
+Cell[2542, 92, 136, 2, 31, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2715, 99, 1093, 35, 99, "Input"],
+Cell[3811, 136, 264, 6, 82, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4112, 147, 931, 28, 121, "Input"],
+Cell[CellGroupData[{
+Cell[5068, 179, 789, 24, 24, "Print"],
+Cell[5860, 205, 790, 26, 24, "Print"]
+}, Open  ]]
+}, Open  ]],
+Cell[6677, 235, 92, 1, 32, "Input"]
+}
+]
+*)
+
+(* End of internal cache information *)

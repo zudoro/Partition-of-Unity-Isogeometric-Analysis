@@ -1,0 +1,16 @@
+ PDE=CNVD
+ Epsilon=  0.10000000000000001     
+ Boundary Layer Problem?N
+ Do you use enriching functions?N
+ Do you Apply any special type of mesh refinement?NA
+ Do you impose zero boundary condition?N
+ DOF - BD_DOFORDERMAX.L2ENRG
+         112           2           2           2   8.1392989295871025        61.514656145894449        16.271130465315618     
+ DOF - BD_DOFORDERMAX.L2ENRG
+         246           3           3           3   8.8703749889063790        51.193738651943477        13.124160523803676     
+ DOF - BD_DOFORDERMAX.L2ENRG
+         432           4           4           4   7.6515355406686458        63.803918757716744        13.327457587162899     
+ DOF - BD_DOFORDERMAX.L2ENRG
+         670           5           5           5   3.6858938434330573        34.257195085867750        7.5727306118346149     
+ DOF - BD_DOFORDERMAX.L2ENRG
+         960           6           6           6  0.89972732886267293        7.9998241285941347        1.9634357552100223     
