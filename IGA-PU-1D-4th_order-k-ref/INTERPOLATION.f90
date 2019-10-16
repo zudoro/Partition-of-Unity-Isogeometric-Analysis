@@ -1,0 +1,1597 @@
+MODULE INTERPOLATION
+
+  USE GLBVAR
+	USE PATCH_MAPPING
+
+  IMPLICIT NONE
+
+! 	INTERFACE PHYRPP_TRI
+! 		MODULE PROCEDURE PHYRPPVEC_TRI, PHYRPP2D_TRI
+! 	END INTERFACE PHYRPP_TRI
+! 
+! 	INTERFACE PHYRPPQUAD
+! 			MODULE PROCEDURE PHYRPPQUADPT, PHYRPPQUADVC
+! 		END INTERFACE PHYRPPQUAD
+! 		
+! 	INTERFACE PHYRPPTENSOR
+! 			MODULE PROCEDURE PHYRPPTENSORPT, PHYRPPTENSORVC
+! 		END INTERFACE PHYRPPTENSOR
+
+CONTAINS
+
+! SUBROUTINE PHYRPPTENSORVC(VECVAL, VEC, NVEC, INDX, PUI)
+! 
+! 	INTEGER, INTENT(IN) :: NVEC, PUI
+! 	TYPE(FVALUE), INTENT(OUT) :: VECVAL(NVEC)
+! 	TYPE(POINT2D), INTENT(IN) :: VEC(NVEC)
+! 	TYPE(INT2D), INTENT(IN) :: INDX
+! 	
+! 	TYPE(TRANSFORM2D) :: TMP_PT
+! 	TYPE(FVALUE) :: TMP_SF
+! 	INTEGER :: I
+!     
+! 	DO I=1, NVEC
+! 
+! 		IF ((VEC(I).IN.DF_RPPSUP(PUI)).EQV..TRUE.) THEN
+! 			TMP_PT = PHYREC_TO_MSTREC(VEC(I), DF_RPPSUP(PUI), MSTREC)
+! 
+! 			TMP_SF = REFSF(TMP_PT%PT, INDX)
+! 
+! 			VECVAL(I)%D00 = TMP_SF%D00
+! 			VECVAL(I)%D10 = TMP_SF%D10*TMP_PT%DXDX + TMP_SF%D01*TMP_PT%DYDX
+! 			VECVAL(I)%D01 = TMP_SF%D10*TMP_PT%DXDY + TMP_SF%D01*TMP_PT%DYDY
+! 			VECVAL(I)%D20 = TMP_SF%D20*(TMP_PT%DXDX)**2 + 2.D0*TMP_SF%D11*TMP_PT%DXDX*TMP_PT%DYDX + TMP_SF%D02*(TMP_PT%DYDX)**2
+! 			VECVAL(I)%D02 = TMP_SF%D20*(TMP_PT%DXDY)**2 + 2.D0*TMP_SF%D11*TMP_PT%DXDY*TMP_PT%DYDY + TMP_SF%D02*(TMP_PT%DYDY)**2
+! 			VECVAL(I)%D11 = TMP_SF%D20*TMP_PT%DXDX*TMP_PT%DXDY + TMP_SF%D11*(TMP_PT%DXDX*TMP_PT%DYDY + TMP_PT%DXDY*TMP_PT%DYDX) &
+! 											+ TMP_SF%D02*TMP_PT%DYDX*TMP_PT%DYDY
+! 		ELSE
+! 			VECVAL(I) = FVALUE(0.D0,0.D0,0.D0,0.D0,0.D0,0.D0)
+! 		ENDIF
+! 	ENDDO
+! 
+! END SUBROUTINE PHYRPPTENSORVC
+! 
+! TYPE(FVALUE) FUNCTION PHYRPPTENSORPT(PT, INDX, PUI)
+! 
+! 	INTEGER, INTENT(IN) :: PUI
+! 	TYPE(POINT2D), INTENT(IN) :: PT
+! 	TYPE(INT2D), INTENT(IN) :: INDX
+! 	
+! 	TYPE(TRANSFORM2D) :: TMP_PT
+! 	TYPE(FVALUE) :: TMP_SF
+! 
+! 	IF ((PT.IN.DF_RPPSUP(PUI)).EQV..TRUE.) THEN
+! 		TMP_PT = PHYREC_TO_MSTREC(PT, DF_RPPSUP(PUI), MSTREC)
+! 
+! 		TMP_SF = REFSF(TMP_PT%PT, INDX)
+! 
+! 		PHYRPPTENSORPT%D00 = TMP_SF%D00
+! 		PHYRPPTENSORPT%D10 = TMP_SF%D10*TMP_PT%DXDX + TMP_SF%D01*TMP_PT%DYDX
+! 		PHYRPPTENSORPT%D01 = TMP_SF%D10*TMP_PT%DXDY + TMP_SF%D01*TMP_PT%DYDY
+! 		PHYRPPTENSORPT%D20 = TMP_SF%D20*(TMP_PT%DXDX)**2 + 2.D0*TMP_SF%D11*TMP_PT%DXDX*TMP_PT%DYDX + TMP_SF%D02*(TMP_PT%DYDX)**2
+! 		PHYRPPTENSORPT%D02 = TMP_SF%D20*(TMP_PT%DXDY)**2 + 2.D0*TMP_SF%D11*TMP_PT%DXDY*TMP_PT%DYDY + TMP_SF%D02*(TMP_PT%DYDY)**2
+! 		PHYRPPTENSORPT%D11 = TMP_SF%D20*TMP_PT%DXDX*TMP_PT%DXDY + TMP_SF%D11*(TMP_PT%DXDX*TMP_PT%DYDY + TMP_PT%DXDY*TMP_PT%DYDX) &
+! 										+ TMP_SF%D02*TMP_PT%DYDX*TMP_PT%DYDY
+! 	ELSE
+! 		PHYRPPTENSORPT = FVALUE(0.D0,0.D0,0.D0,0.D0,0.D0,0.D0)
+! 	ENDIF
+! 
+! END FUNCTION PHYRPPTENSORPT
+! 
+! SUBROUTINE PHYRPPQUADVC(VECVAL, VEC, NVEC, INDX, PHYVRTX, MSTVRTX)
+! 
+! 	INTEGER, INTENT(IN) :: NVEC
+! 	TYPE(FVALUE), INTENT(OUT) :: VECVAL(NVEC)
+! 	TYPE(POINT2D), INTENT(IN) :: VEC(NVEC)
+! 	TYPE(TRIPATCH), INTENT(IN) :: PHYVRTX, MSTVRTX
+! 	TYPE(INT2D), INTENT(IN) :: INDX
+! 
+! 	TYPE(TRANSFORM2D) :: TMP_PT
+! 	TYPE(FVALUE) :: TMP_SF
+! 	INTEGER :: I
+! 
+!     
+! 	DO I=1, NVEC
+! 
+! 		TMP_PT = PHYTRI_TO_MSTTRI(VEC(I), PHYVRTX, MSTVRTX)
+! 
+! 		TMP_SF = REFSF(TMP_PT%PT, INDX)
+! 
+! 		VECVAL(I)%D00 = TMP_SF%D00
+! 		VECVAL(I)%D10 = TMP_SF%D10*TMP_PT%DXDX + TMP_SF%D01*TMP_PT%DYDX
+! 		VECVAL(I)%D01 = TMP_SF%D10*TMP_PT%DXDY + TMP_SF%D01*TMP_PT%DYDY
+! 		VECVAL(I)%D20 = TMP_SF%D20*(TMP_PT%DXDX)**2 + 2.D0*TMP_SF%D11*TMP_PT%DXDX*TMP_PT%DYDX + TMP_SF%D02*(TMP_PT%DYDX)**2
+! 		VECVAL(I)%D02 = TMP_SF%D20*(TMP_PT%DXDY)**2 + 2.D0*TMP_SF%D11*TMP_PT%DXDY*TMP_PT%DYDY + TMP_SF%D02*(TMP_PT%DYDY)**2
+! 		VECVAL(I)%D11 = TMP_SF%D20*TMP_PT%DXDX*TMP_PT%DXDY + TMP_SF%D11*(TMP_PT%DXDX*TMP_PT%DYDY + TMP_PT%DXDY*TMP_PT%DYDX) &
+! 										+ TMP_SF%D02*TMP_PT%DYDX*TMP_PT%DYDY
+! 	ENDDO
+! 
+! END SUBROUTINE PHYRPPQUADVC
+! 
+! TYPE(FVALUE) FUNCTION PHYRPPQUADPT(PHYPT, INDX, PHYVRTX, MSTVRTX)
+! 
+! 	TYPE(POINT2D), INTENT(IN) :: PHYPT
+! 	TYPE(TRIPATCH), INTENT(IN) :: PHYVRTX, MSTVRTX
+! 	TYPE(INT2D), INTENT(IN) :: INDX
+! 
+! 	TYPE(TRANSFORM2D) :: TMP_PT
+! 	TYPE(FVALUE) :: TMP_SF
+! 
+! 	TMP_PT = PHYTRI_TO_MSTTRI(PHYPT, PHYVRTX, MSTVRTX)
+! 
+! 	TMP_SF = REFSF(TMP_PT%PT, INDX)
+! 
+! 	PHYRPPQUADPT%D00 = TMP_SF%D00
+! 	PHYRPPQUADPT%D10 = TMP_SF%D10*TMP_PT%DXDX + TMP_SF%D01*TMP_PT%DYDX
+! 	PHYRPPQUADPT%D01 = TMP_SF%D10*TMP_PT%DXDY + TMP_SF%D01*TMP_PT%DYDY
+! 	PHYRPPQUADPT%D20 = TMP_SF%D20*(TMP_PT%DXDX)**2 + 2.D0*TMP_SF%D11*TMP_PT%DXDX*TMP_PT%DYDX + TMP_SF%D02*(TMP_PT%DYDX)**2
+! 	PHYRPPQUADPT%D02 = TMP_SF%D20*(TMP_PT%DXDY)**2 + 2.D0*TMP_SF%D11*TMP_PT%DXDY*TMP_PT%DYDY + TMP_SF%D02*(TMP_PT%DYDY)**2
+! 	PHYRPPQUADPT%D11 = TMP_SF%D20*TMP_PT%DXDX*TMP_PT%DXDY + TMP_SF%D11*(TMP_PT%DXDX*TMP_PT%DYDY + TMP_PT%DXDY*TMP_PT%DYDX) &
+! 											+ TMP_SF%D02*TMP_PT%DYDX*TMP_PT%DYDY
+! 
+! END FUNCTION PHYRPPQUADPT
+! 
+! SUBROUTINE PHYRPPVEC_TRI(VECVAL, VEC, NVEC, NODE, RS_ORD, PHYVRTX, MSTVRTX)
+! 
+! 
+! 	INTEGER, INTENT(IN) :: NVEC, NODE, RS_ORD
+! 	TYPE(FVALUE), INTENT(OUT) :: VECVAL(NVEC)
+! 	TYPE(POINT2D), INTENT(IN) :: VEC(NVEC)
+! 	TYPE(TRIPATCH), INTENT(IN) :: PHYVRTX, MSTVRTX
+! 
+! 	TYPE(TRANSFORM2D) :: AMAP
+! 	TYPE(FVALUE) :: RPPVAL
+! 	INTEGER :: I
+! 
+! 	DO I=1, NVEC
+! 
+! 		AMAP = PHYTRI_TO_MSTTRI(VEC(I),PHYVRTX,MSTVRTX)
+! 
+! 		RPPVAL = REFRPP_TRI(AMAP%PT,NODE,RS_ORD)
+! 
+! 		
+! 
+! 		VECVAL(I)%D00 = RPPVAL%D00
+! 
+! 		VECVAL(I)%D10 = RPPVAL%D10*(AMAP%DXDX)+RPPVAL%D01*(AMAP%DYDX)
+! 
+! 		VECVAL(I)%D01 = RPPVAL%D10*(AMAP%DXDY)+RPPVAL%D01*(AMAP%DYDY)
+! 
+! 	ENDDO
+! 
+! END SUBROUTINE PHYRPPVEC_TRI
+! 
+! 
+! 
+! TYPE(FVALUE) FUNCTION PHYRPP2D_TRI(PT,NODE,RS_ORD,PHYVRTX,MSTVRTX)
+! 
+! 	TYPE(POINT2D), INTENT(IN) :: PT
+! 	TYPE(TRIPATCH), INTENT(IN) :: PHYVRTX, MSTVRTX
+! 	INTEGER, INTENT(IN) :: NODE, RS_ORD
+! 
+! 	TYPE(TRANSFORM2D) :: AMAP
+! 	TYPE(FVALUE) :: RPPVAL
+! 
+! 	AMAP = PHYTRI_TO_MSTTRI(PT,PHYVRTX,MSTVRTX)
+! 
+! 	RPPVAL = REFRPP_TRI(AMAP%PT,NODE,RS_ORD)
+! 
+! 	PHYRPP2D_TRI%D00 = RPPVAL%D00
+! 	PHYRPP2D_TRI%D10 = RPPVAL%D10*(AMAP%DXDX)+RPPVAL%D01*(AMAP%DYDX)
+! 	PHYRPP2D_TRI%D01 = RPPVAL%D10*(AMAP%DXDY)+RPPVAL%D01*(AMAP%DYDY)
+! 
+! END FUNCTION PHYRPP2D_TRI
+! 
+! TYPE(FVALUE) FUNCTION REFSF(PT,INDX)
+!   TYPE(POINT2D), INTENT(IN) :: PT
+!   TYPE(INT2D), INTENT(IN) :: INDX
+! 
+!   REFSF%D00 = REF1D(PT%X,INDX%A,0)*REF1D(PT%Y,INDX%B,0)
+! 	REFSF%D10 = REF1D(PT%X,INDX%A,1)*REF1D(PT%Y,INDX%B,0)
+! 	REFSF%D01 = REF1D(PT%X,INDX%A,0)*REF1D(PT%Y,INDX%B,1)
+! 	REFSF%D20 = REF1D(PT%X,INDX%A,2)*REF1D(PT%Y,INDX%B,0)
+! 	REFSF%D02 = REF1D(PT%X,INDX%A,0)*REF1D(PT%Y,INDX%B,2)
+! 	REFSF%D11 = REF1D(PT%X,INDX%A,1)*REF1D(PT%Y,INDX%B,1)
+! 
+! END FUNCTION REFSF
+! 
+! TYPE(FVALUE) FUNCTION REFRPP_TRI(PT, ND, ORD)
+! 
+! 	TYPE(POINT2D), INTENT(IN) :: PT
+! 
+! 	INTEGER, INTENT(IN) :: ND, ORD
+! 
+! 	
+! 
+! 	SELECT CASE (ORD)
+! 
+! 	CASE (1)
+! 
+! 		REFRPP_TRI = REFRPP2D_TRI_K1(PT,ND)
+! 
+! 	CASE (2)
+! 
+! 		REFRPP_TRI = REFRPP2D_TRI_K2(PT,ND)
+! 
+! 	CASE (3)
+! 
+! 		REFRPP_TRI = REFRPP2D_TRI_K3(PT,ND)
+! 
+! 	CASE (4)
+! 
+! 		REFRPP_TRI = REFRPP2D_TRI_K4(PT,ND)
+! 
+!  	CASE (6)
+! 
+!  		REFRPP_TRI = REFRPP2D_TRI_K6(PT,ND)
+! 
+! ! 	CASE (8)
+! 
+! ! 		REFRPP_TRI = REFRPP2D_TRI_K8(PT,ND)
+! 
+! 	CASE DEFAULT
+! 
+! 		PRINT*, 'ERROR CODE INTERPOLATION - REFRPP_TR'
+! 
+! 	END SELECT
+! 
+! END FUNCTION REFRPP_TRI
+! 
+! TYPE(FVALUE) FUNCTION REFRPP2D_TRI_K1(PT2D,NODE)
+! 	TYPE(POINT2D), INTENT(IN) :: PT2D
+! 	INTEGER, INTENT(IN) :: NODE
+! 	REAL*8 :: LAMBDA1, LAMBDA2, LAMBDA3, X, Y
+! 	
+! 	LAMBDA1=1.0D0-PT2D%X-PT2D%Y; LAMBDA2=PT2D%X; LAMBDA3=PT2D%Y
+! 	X = PT2D%X
+! 	Y = PT2D%Y
+! 	
+! 	SELECT CASE(NODE)
+! 		CASE (1)
+! 			REFRPP2D_TRI_K1%D00 = LAMBDA1
+! 			REFRPP2D_TRI_K1%D10 = -1.D0
+! 			REFRPP2D_TRI_K1%D01 = -1.D0
+! 		CASE (2)
+! 			REFRPP2D_TRI_K1%D00 = LAMBDA2
+! 			REFRPP2D_TRI_K1%D10 = 1.D0
+! 			REFRPP2D_TRI_K1%D01 = 0.D0
+! 		CASE (3)
+! 			REFRPP2D_TRI_K1%D00 = LAMBDA3
+! 			REFRPP2D_TRI_K1%D10 = 0.D0
+! 			REFRPP2D_TRI_K1%D01 = 1.D0
+! 		CASE DEFAULT
+! 	END SELECT
+! END FUNCTION REFRPP2D_TRI_K1
+! 
+! TYPE(FVALUE) FUNCTION REFRPP2D_TRI_K2(PT2D,NODE)
+! 	TYPE(POINT2D), INTENT(IN) :: PT2D
+! 	INTEGER, INTENT(IN) :: NODE
+! 	REAL*8 :: LAMBDA1, LAMBDA2, LAMBDA3, X, Y
+! 	
+! 	LAMBDA1=1.0D0-PT2D%X-PT2D%Y; LAMBDA2=PT2D%X; LAMBDA3=PT2D%Y
+! 	X = PT2D%X
+! 	Y = PT2D%Y
+! 	
+! 	SELECT CASE(NODE)
+! 		CASE (1)
+! 			REFRPP2D_TRI_K2%D00 = LAMBDA1*(2*LAMBDA1-1)
+! 			REFRPP2D_TRI_K2%D10 = -3.D0 + 4*X + 4*Y
+! 			REFRPP2D_TRI_K2%D01 = -3.D0 + 4*X + 4*Y
+! 		CASE (2)
+! 			REFRPP2D_TRI_K2%D00 = 4.0D0*LAMBDA1*LAMBDA2
+! 			REFRPP2D_TRI_K2%D10 = -4*X - 4*(-1.0d0 + X + Y)
+! 			REFRPP2D_TRI_K2%D01 = -4*X
+! 		CASE (3)
+! 			REFRPP2D_TRI_K2%D00 = LAMBDA2*(2*LAMBDA2-1)
+! 			REFRPP2D_TRI_K2%D10 = -1.D0 + 4*X
+! 			REFRPP2D_TRI_K2%D01 = 0.D0
+! 		CASE (4)
+! 			REFRPP2D_TRI_K2%D00 = 4.0D0*LAMBDA1*LAMBDA3
+! 			REFRPP2D_TRI_K2%D10 = -4*Y
+! 			REFRPP2D_TRI_K2%D01 = -4*Y - 4*(-1.0d0 + X + Y)
+! 		CASE (5)
+! 			REFRPP2D_TRI_K2%D00 = 4.0D0*LAMBDA2*LAMBDA3
+! 			REFRPP2D_TRI_K2%D10 = 4*Y
+! 			REFRPP2D_TRI_K2%D01 = 4*X
+! 		CASE (6)
+! 			REFRPP2D_TRI_K2%D00 = LAMBDA3*(2*LAMBDA3-1)
+! 			REFRPP2D_TRI_K2%D10 = 0.D0
+! 			REFRPP2D_TRI_K2%D01 = -1.D0 + 4*Y
+! 		CASE DEFAULT
+! 	END SELECT
+! END FUNCTION REFRPP2D_TRI_K2
+! 
+! TYPE(FVALUE) FUNCTION REFRPP2D_TRI_K3(PT2D,NODE)
+! 	TYPE(POINT2D), INTENT(IN) :: PT2D
+! 	INTEGER, INTENT(IN) :: NODE
+! 	REAL*8 :: X, Y
+! 	
+! 	X = PT2D%X
+! 	Y = PT2D%Y
+! 	
+! 	SELECT CASE(NODE)
+! 		CASE (1)
+! 			REFRPP2D_TRI_K3%D00 = 1.D0 + Y*(-5.5D0 - (9*(-2.D0 + Y)*Y)/2.D0) - &
+! 								  (X*(11.D0 + 9*X**2 - 36*Y + 27*Y**2 + 9*X*(-2.D0 + 3*Y)))/2.D0
+! 			REFRPP2D_TRI_K3%D10 = -(X*(18*X + 9*(-2.D0 + 3*Y)))/2.D0 + (-11 - 9*X**2 + 36*Y - 27*Y**2 - &
+! 								  9*X*(-2.D0 + 3*Y))/2.D0
+! 			REFRPP2D_TRI_K3%D01 = -5.5D0 + ((-9*(-2.D0 + Y))/2.D0 - (9*Y)/2.D0)*Y - (9*(-2.D0 + Y)*Y)/2.D0 - &
+! 								  (X*(-36.D0 + 27*X + 54*Y))/2.D0
+! 		CASE (2)
+! 			REFRPP2D_TRI_K3%D00 = (9*X*(2.D0 + 3*X**2 - 5*Y + 3*Y**2 + X*(-5.D0 + 6*Y)))/2.D0
+! 			REFRPP2D_TRI_K3%D10 = (9*X*(-5.D0 + 6*X + 6*Y))/2.D0 + &
+! 								  (9*(2 + 3*X**2 - 5*Y + 3*Y**2 + X*(-5.D0 + 6*Y)))/2.D0
+! 			REFRPP2D_TRI_K3%D01 = (9*X*(-5.D0 + 6*X + 6*Y))/2.D0
+! 		CASE (3)
+! 			REFRPP2D_TRI_K3%D00 = (-9*X*(-1.D0 + 3*X)*(-1.D0 + X + Y))/2.D0
+! 			REFRPP2D_TRI_K3%D10 = (-9*X*(-1.D0 + 3*X))/2.D0 - (27*X*(-1.D0 + X + Y))/2.D0 - &
+! 								  (9*(-1.D0 + 3*X)*(-1.D0 + X + Y))/2.D0
+! 			REFRPP2D_TRI_K3%D01 = (-9*X*(-1.D0 + 3*X))/2.D0
+! 		CASE (4)
+! 			REFRPP2D_TRI_K3%D00 = (X*(2.D0 - 9*X + 9*X**2))/2.D0
+! 			REFRPP2D_TRI_K3%D10 = (X*(-9.D0 + 18*X))/2.D0 + (2.D0 - 9*X + 9*X**2)/2.D0
+! 			REFRPP2D_TRI_K3%D01 = 0.D0
+! 		CASE (5)
+! 			REFRPP2D_TRI_K3%D00 = (9*Y*(2 + 3*X**2 - 5*Y + 3*Y**2 + X*(-5.D0 + 6*Y)))/2.D0
+! 			REFRPP2D_TRI_K3%D10 = (9*Y*(-5.D0 + 6*X + 6*Y))/2.D0
+! 			REFRPP2D_TRI_K3%D01 = (9*Y*(-5.D0 + 6*X + 6*Y))/2.D0 + &
+! 								  (9*(2.D0 + 3*X**2 - 5*Y + 3*Y**2 + X*(-5.D0 + 6*Y)))/2.D0
+! 		CASE (6)
+! 			REFRPP2D_TRI_K3%D00 = -27.D0*X*Y*(-1.D0 + X + Y)
+! 			REFRPP2D_TRI_K3%D10 = -27.D0*X*Y - 27.D0*Y*(-1.D0 + X + Y)
+! 			REFRPP2D_TRI_K3%D01 = -27.D0*X*Y - 27.D0*X*(-1.D0 + X + Y)
+! 		CASE (7)
+! 			REFRPP2D_TRI_K3%D00 = (9*X*(-1.D0 + 3*X)*Y)/2.D0
+! 			REFRPP2D_TRI_K3%D10 = (27*X*Y)/2.D0 + (9*(-1.D0 + 3*X)*Y)/2.D0
+! 			REFRPP2D_TRI_K3%D01 = (9*X*(-1.D0 + 3*X))/2.D0
+! 		CASE (8)
+! 			REFRPP2D_TRI_K3%D00 = (-9*Y*(-1.D0 + X + Y)*(-1.D0 + 3*Y))/2.D0
+! 			REFRPP2D_TRI_K3%D10 = (-9*Y*(-1.D0 + 3*Y))/2.D0
+! 			REFRPP2D_TRI_K3%D01 = (-27*Y*(-1.D0 + X + Y))/2.D0 - (9*Y*(-1.D0 + 3*Y))/2.D0 - &
+! 								  (9*(-1.D0 + X + Y)*(-1.D0 + 3*Y))/2.D0
+! 		CASE (9)
+! 			REFRPP2D_TRI_K3%D00 = (9*X*Y*(-1.D0 + 3*Y))/2.D0
+! 			REFRPP2D_TRI_K3%D10 = (9*Y*(-1.D0 + 3*Y))/2.D0
+! 			REFRPP2D_TRI_K3%D01 = (27*X*Y)/2.D0 + (9*X*(-1.0d0 + 3*Y))/2.D0
+! 		CASE (10)
+! 			REFRPP2D_TRI_K3%D00 = (Y*(2 - 9*Y + 9*Y**2))/2.D0
+! 			REFRPP2D_TRI_K3%D10 = 0.D0
+! 			REFRPP2D_TRI_K3%D01 = (Y*(-9.D0 + 18*Y))/2.D0 + (2.D0 - 9*Y + 9*Y**2)/2.D0
+! 		CASE DEFAULT
+! 	END SELECT
+! END FUNCTION REFRPP2D_TRI_K3
+! 
+! TYPE(FVALUE) FUNCTION REFRPP2D_TRI_K4(PT2D,NODE)
+! 	TYPE(POINT2D), INTENT(IN) :: PT2D
+! 	INTEGER, INTENT(IN) :: NODE
+! 	REAL*8 :: LAMBDA1, LAMBDA2, LAMBDA3, X, Y
+! 	
+! 	LAMBDA1=1.0D0-PT2D%X-PT2D%Y; LAMBDA2=PT2D%X; LAMBDA3=PT2D%Y
+! 	X = PT2D%X
+! 	Y = PT2D%Y
+! 
+! 	SELECT CASE(NODE)
+! 		CASE (1)	
+! 			REFRPP2D_TRI_K4%D00 = (1/6.0D0)*LAMBDA1*(4*LAMBDA1-1)*(4*LAMBDA1-2)*(4*LAMBDA1-3)
+! 			REFRPP2D_TRI_K4%D10 = (-25.D0 + 32*X**3 + 140*Y - 240*Y**2 + 128*Y**3 + 16*X**2*(-5 + 8*Y) + &
+! 			2*X*(35 - 120*Y + 96*Y**2) + X*(96*X**2 + 32*X*(-5 + 8*Y) + 2*(35 - 120*Y + 96*Y**2)))/3.D0
+! 			REFRPP2D_TRI_K4%D01 = (-25.D0 + 70*Y - 80*Y**2 + 32*Y**3 + Y*(70 - 160*Y + 96*Y**2) + X*(140 + &
+! 			128*X**2 - 480*Y + 384*Y**2 + 2*X*(-120 + 192*Y)))/3.D0
+! 		CASE (2)	
+! 			REFRPP2D_TRI_K4%D00 = (8/3.0D0)*LAMBDA1*LAMBDA2*(4*LAMBDA1-1)*(4*LAMBDA1-2)
+! 			REFRPP2D_TRI_K4%D10 = (-16*X*(13 + 24*X**2 - 36*Y + 24*Y**2 + 12*X*(-3 + 4*Y)))/3.D0 - &
+! 			(16*(-3 + 8*X**3 + 13*Y - 18*Y**2 + 8*Y**3 + 6*X**2*(-3 + 4*Y) + X*(13 - 36*Y + 24*Y**2)))/3.D0
+! 			REFRPP2D_TRI_K4%D01 = (-16*X*(13 + 24*X**2 - 36*Y + 24*Y**2 + X*(-36 + 48*Y)))/3.D0
+! 		CASE (3)	
+! 			REFRPP2D_TRI_K4%D00 = 4.0D0*LAMBDA1*(4*LAMBDA1-1)*LAMBDA2*(4*LAMBDA2-1)
+! 			REFRPP2D_TRI_K4%D10 = 4*X*(-1.0d0 + 4*X)*(-7 + 8*X + 8*Y) + 16*X*(3 + 4*X**2 - 7*Y + 4*Y**2 + &
+! 			X*(-7 + 8*Y)) + 4*(-1.0d0 + 4*X)*(3 + 4*X**2 - 7*Y + 4*Y**2 + X*(-7 + 8*Y))
+! 			REFRPP2D_TRI_K4%D01 = 4*X*(-1.0d0 + 4*X)*(-7 + 8*X + 8*Y)
+! 		CASE (4)	
+! 			REFRPP2D_TRI_K4%D00 = (8/3.0D0)*LAMBDA1*LAMBDA2*(4*LAMBDA2-1)*(4*LAMBDA2-2)
+! 			REFRPP2D_TRI_K4%D10 = (-16*X*(1 - 6*X + 8*X**2))/3.D0 - (16*X*(-6 + 16*X)*(-1.0d0 + X + Y))/3.D0 - &
+! 			(16*(1 - 6*X + 8*X**2)*(-1.0d0 + X + Y))/3.D0
+! 			REFRPP2D_TRI_K4%D01 = (-16*X*(1 - 6*X + 8*X**2))/3.D0
+! 		CASE (5)	
+! 			REFRPP2D_TRI_K4%D00 = (1/6.0D0)*LAMBDA2*(4*LAMBDA2-1)*(4*LAMBDA2-2)*(4*LAMBDA2-3)
+! 			REFRPP2D_TRI_K4%D10 = -1.D0 + (2*X*(11 - 24*X + 16*X**2))/3.D0 + X*((2*X*(-24 + 32*X))/3.D0 + &
+! 			(2*(11 - 24*X + 16*X**2))/3.D0)
+! 			REFRPP2D_TRI_K4%D01 = 0.D0
+! 		CASE (6)	
+! 			REFRPP2D_TRI_K4%D00 = (8/3.0D0)*LAMBDA1*(4*LAMBDA1-1)*(4*LAMBDA1-2)*LAMBDA3
+! 			REFRPP2D_TRI_K4%D10 = (-16*Y*(13 + 24*X**2 - 36*Y + 24*Y**2 + 12*X*(-3 + 4*Y)))/3.D0
+! 			REFRPP2D_TRI_K4%D01 = (-16*Y*(13 + 24*X**2 - 36*Y + 24*Y**2 + X*(-36 + 48*Y)))/3.D0 - &
+! 			(16*(-3 + 8*X**3 + 13*Y - 18*Y**2 + 8*Y**3 + 6*X**2*(-3 + 4*Y) + X*(13 - 36*Y + 24*Y**2)))/3.D0
+! 		CASE (7)	
+! 			REFRPP2D_TRI_K4%D00 = 32.0D0*LAMBDA1*LAMBDA2*LAMBDA3*(4*LAMBDA1-1)
+! 			REFRPP2D_TRI_K4%D10 = 32*X*Y*(-7 + 8*X + 8*Y) + 32*Y*(3 + 4*X**2 - 7*Y + 4*Y**2 + X*(-7 + 8*Y))
+! 			REFRPP2D_TRI_K4%D01 = 32*X*Y*(-7 + 8*X + 8*Y) + 32*X*(3 + 4*X**2 - 7*Y + 4*Y**2 + X*(-7 + 8*Y))
+! 		CASE (8)	
+! 			REFRPP2D_TRI_K4%D00 = 32.0D0*LAMBDA1*LAMBDA2*LAMBDA3*(4*LAMBDA2-1)
+! 			REFRPP2D_TRI_K4%D10 = -32*X*(-1.0d0 + 4*X)*Y - 128*X*Y*(-1.0d0 + X + Y) - 32*(-1.0d0 + 4*X)*Y*(-1.0d0 + X + Y)
+! 			REFRPP2D_TRI_K4%D01 = -32*X*(-1.0d0 + 4*X)*Y - 32*X*(-1.0d0 + 4*X)*(-1.0d0 + X + Y)
+! 		CASE (9)	
+! 			REFRPP2D_TRI_K4%D00 = (8/3.0D0)*LAMBDA2*LAMBDA3*(4*LAMBDA2-1)*(4*LAMBDA2-2)
+! 			REFRPP2D_TRI_K4%D10 = (16*X*(-6 + 16*X)*Y)/3.D0 + (16*(1 - 6*X + 8*X**2)*Y)/3.D0
+! 			REFRPP2D_TRI_K4%D01 = (16*X*(1 - 6*X + 8*X**2))/3.D0
+! 		CASE (10)	
+! 			REFRPP2D_TRI_K4%D00 = 4.0D0*LAMBDA1*LAMBDA3*(4*LAMBDA1-1)*(4*LAMBDA3-1)
+! 			REFRPP2D_TRI_K4%D10 = 4*Y*(-1.0d0 + 4*Y)*(-7 + 8*X + 8*Y)
+! 			REFRPP2D_TRI_K4%D01 = 4*Y*(-1.0d0 + 4*Y)*(-7 + 8*X + 8*Y) + 16*Y*(3 + 4*X**2 - 7*Y + 4*Y**2 + &
+! 			X*(-7 + 8*Y)) + 4*(-1.0d0 + 4*Y)*(3 + 4*X**2 - 7*Y + 4*Y**2 + X*(-7 + 8*Y))
+! 		CASE (11)	
+! 			REFRPP2D_TRI_K4%D00 = 32.0D0*LAMBDA1*LAMBDA2*LAMBDA3*(4*LAMBDA3-1)
+! 			REFRPP2D_TRI_K4%D10 = -32*X*Y*(-1.0d0 + 4*Y) - 32*Y*(-1.0d0 + X + Y)*(-1.0d0 + 4*Y)
+! 			REFRPP2D_TRI_K4%D01 = -128*X*Y*(-1.0d0 + X + Y) - 32*X*Y*(-1.0d0 + 4*Y) - 32*X*(-1.0d0 + X + Y)*(-1.0d0 + 4*Y)
+! 		CASE (12)	
+! 			REFRPP2D_TRI_K4%D00 = 4.0D0*LAMBDA2*LAMBDA3*(4*LAMBDA2-1)*(4*LAMBDA3-1)
+! 			REFRPP2D_TRI_K4%D10 = 16*X*Y*(-1.0d0 + 4*Y) + 4*(-1.0d0 + 4*X)*Y*(-1.0d0 + 4*Y)
+! 			REFRPP2D_TRI_K4%D01 = 16*X*(-1.0d0 + 4*X)*Y + 4*X*(-1.0d0 + 4*X)*(-1.0d0 + 4*Y)
+! 		CASE (13)	
+! 			REFRPP2D_TRI_K4%D00 = (8/3.0D0)*LAMBDA1*LAMBDA3*(4*LAMBDA3-1)*(4*LAMBDA3-2)
+! 			REFRPP2D_TRI_K4%D10 = (-16*Y*(1 - 6*Y + 8*Y**2))/3.D0
+! 			REFRPP2D_TRI_K4%D01 = (-16*Y*(-1.0d0 + X + Y)*(-6 + 16*Y))/3.D0 - (16*Y*(1 - 6*Y + 8*Y**2))/3.D0 - &
+! 			(16*(-1.0d0 + X + Y)*(1 - 6*Y + 8*Y**2))/3.D0
+! 		CASE (14)	
+! 			REFRPP2D_TRI_K4%D00 = (8/3.0D0)*LAMBDA2*LAMBDA3*(4*LAMBDA3-1)*(4*LAMBDA3-2)
+! 			REFRPP2D_TRI_K4%D10 = (16*Y*(1 - 6*Y + 8*Y**2))/3.D0
+! 			REFRPP2D_TRI_K4%D01 = (16*X*Y*(-6 + 16*Y))/3.D0 + (16*X*(1 - 6*Y + 8*Y**2))/3.D0
+! 		CASE (15)	
+! 			REFRPP2D_TRI_K4%D00 = (1/6.0D0)*LAMBDA3*(4*LAMBDA3-1)*(4*LAMBDA3-2)*(4*LAMBDA3-3)
+! 			REFRPP2D_TRI_K4%D10 = 0.D0
+! 			REFRPP2D_TRI_K4%D01 = -1.D0 + (2*Y*(11 - 24*Y + 16*Y**2))/3.D0 + Y*((2*Y*(-24 + 32*Y))/3.D0 + &
+! 			(2*(11 - 24*Y + 16*Y**2))/3.D0)
+! 		CASE DEFAULT
+! 	END SELECT
+! 		
+! END FUNCTION REFRPP2D_TRI_K4
+! 
+! TYPE(FVALUE) FUNCTION REFRPP2D_TRI_K6(PT2D,NODE)
+! 	TYPE(POINT2D), INTENT(IN) :: PT2D
+! 	INTEGER, INTENT(IN) :: NODE
+! 	REAL*8 :: LAMBDA1, LAMBDA2, LAMBDA3, X, Y
+! 	
+! 	LAMBDA1=1.0D0-PT2D%X-PT2D%Y; LAMBDA2=PT2D%X; LAMBDA3=PT2D%Y
+! 	X = PT2D%X
+! 	Y = PT2D%Y
+! 
+! SELECT CASE(NODE)
+!     CASE (1)
+!         REFRPP2D_TRI_K6%D00=(1/120.0D0)*LAMBDA1*(6*LAMBDA1-1)*(6*LAMBDA1-2)*(6*LAMBDA1-3)*(6*LAMBDA1-4)*(6*LAMBDA1-5)
+!         REFRPP2D_TRI_K6%D10=-14.7D0 + Y*(162.4D0 + (9*Y*(-735 + 1400*Y - 1260*Y**2 + 432*Y**3))/10.D0) + (X*(812 + &
+!         135*Y*(-49 + 140*Y - 168*Y**2 + 72*Y**3) + 9*X*(72*X**3 + 36*X**2*(-7 + 12*Y) + 10*X*(35 - 126*Y + &
+!         108*Y**2) + 5*(-49 + 280*Y - 504*Y**2 + 288*Y**3))))/10.D0 + X*((X*(9*X*(216*X**2 + 72*X*(-7 + 12*Y) + &
+!         10*(35 - 126*Y + 108*Y**2)) + 9*(72*X**3 + 36*X**2*(-7 + 12*Y) + 10*X*(35 - 126*Y + 108*Y**2) + 5*(-49 + &
+!         280*Y - 504*Y**2 + 288*Y**3))))/10.D0 + (812 + 135*Y*(-49 + 140*Y - 168*Y**2 + 72*Y**3) + 9*X*(72*X**3 + &
+!         36*X**2*(-7 + 12*Y) + 10*X*(35 - 126*Y + 108*Y**2) + 5*(-49 + 280*Y - 504*Y**2 + 288*Y**3)))/10.D0)
+!         REFRPP2D_TRI_K6%D01=(Y*(812 - 4410*Y + 9450*Y**2 - 9072*Y**3 + 3240*Y**4))/10.D0 + &
+!         (-147 + 812*Y - 2205*Y**2 + 3150*Y**3 - 2268*Y**4 + 648*Y**5)/10.D0 + X*(162.4 + &
+!         (9*Y*(-735 + 1400*Y - 1260*Y**2 + 432*Y**3))/10.D0 + Y*((9*Y*(1400 - 2520*Y + 1296*Y**2))/10.D0 + &
+!         (9*(-735 + 1400*Y - 1260*Y**2 + 432*Y**3))/10.D0) + (X*(135*Y*(140 - 336*Y + 216*Y**2) + &
+!         135*(-49 + 140*Y - 168*Y**2 + 72*Y**3) + 9*X*(432*X**2 + 10*X*(-126 + 216*Y) + &
+!         5*(280 - 1008*Y + 864*Y**2))))/10.D0)
+!     CASE (2)
+!         REFRPP2D_TRI_K6%D00=(3/10.0D0)*LAMBDA1*LAMBDA2*(6*LAMBDA1-1)*(6*LAMBDA1-2)*(6*LAMBDA1-3)*(6*LAMBDA1-4)
+!         REFRPP2D_TRI_K6%D10=(-18*X*(87 + 540*X**4 - 580*Y + 1395*Y**2 - 1440*Y**3 + 540*Y**4 + 720*X**3*(-2 + 3*Y)&
+!          + 45*X**2*(31 - 96*Y + 72*Y**2) + 10*X*(-58 + 279*Y - 432*Y**2 + 216*Y**3)))/5.D0 - (18*(-10 + 108*X**5 + &
+!          87*Y - 290*Y**2 + 465*Y**3 - 360*Y**4 + 108*Y**5 + 180*X**4*(-2 + 3*Y) + 15*X**3*(31 - 96*Y + 72*Y**2) + &
+!          5*X**2*(-58 + 279*Y - 432*Y**2 + 216*Y**3) + X*(87 - 580*Y + 1395*Y**2 - 1440*Y**3 + 540*Y**4)))/5.D0
+!         REFRPP2D_TRI_K6%D01=(-18*X*(87 + 540*X**4 - 580*Y + 1395*Y**2 - 1440*Y**3 + 540*Y**4 + &
+!         15*X**3*(-96 + 144*Y) + 5*X**2*(279 - 864*Y + 648*Y**2) + X*(-580 + 2790*Y - 4320*Y**2 + 2160*Y**3)))/5.D0
+!     CASE (3)
+!         REFRPP2D_TRI_K6%D00=(3/4.0D0)*LAMBDA1*LAMBDA2*(6*LAMBDA1-1)*(6*LAMBDA1-2)*(6*LAMBDA1-3)*(6*LAMBDA2-1)
+!         REFRPP2D_TRI_K6%D10=(9*X*(-1.0d0 + 6*X)*(-57 + 144*X**3 + 238*Y - 324*Y**2 + 144*Y**3 + 108*X**2*(-3 + 4*Y) + &
+!         2*X*(119 - 324*Y + 216*Y**2)))/2.D0 + 27*X*(10 + 36*X**4 - 57*Y + 119*Y**2 - 108*Y**3 + 36*Y**4 + 36*X**3*&
+!         (-3 + 4*Y) + X**2*(119 - 324*Y + 216*Y**2) + X*(-57 + 238*Y - 324*Y**2 + 144*Y**3)) + (9*(-1.0d0 + 6*X)*(10 + &
+!         36*X**4 - 57*Y + 119*Y**2 - 108*Y**3 + 36*Y**4 + 36*X**3*(-3 + 4*Y) + X**2*(119 - 324*Y + 216*Y**2) + &
+!         X*(-57 + 238*Y - 324*Y**2 + 144*Y**3)))/2.D0
+!         REFRPP2D_TRI_K6%D01=(9*X*(-1.0d0 + 6*X)*(-57 + 144*X**3 + 238*Y - 324*Y**2 + 144*Y**3 + X**2*(-324 + 432*Y) + &
+!         X*(238 - 648*Y + 432*Y**2)))/2.D0
+!     CASE (4)
+!         REFRPP2D_TRI_K6%D00=LAMBDA1*LAMBDA2*(6*LAMBDA1-1)*(6*LAMBDA1-2)*(6*LAMBDA2-1)*(6*LAMBDA2-2)
+!         REFRPP2D_TRI_K6%D10=-4*X*(1 - 9*X + 18*X**2)*(37 + 54*X**2 - 90*Y + 54*Y**2 + 18*X*(-5 + 6*Y)) - &
+!         4*X*(-9 + 36*X)*(-10 + 18*X**3 + 37*Y - 45*Y**2 + 18*Y**3 + 9*X**2*(-5 + 6*Y) + X*(37 - 90*Y + 54*Y**2)) - &
+!         4*(1 - 9*X + 18*X**2)*(-10 + 18*X**3 + 37*Y - 45*Y**2 + 18*Y**3 + 9*X**2*(-5 + 6*Y) + &
+!         X*(37 - 90*Y + 54*Y**2))
+!         REFRPP2D_TRI_K6%D01=-4*X*(1 - 9*X + 18*X**2)*(37 + 54*X**2 - 90*Y + 54*Y**2 + X*(-90 + 108*Y))
+!     CASE (5)
+!         REFRPP2D_TRI_K6%D00=(3/4.0D0)*LAMBDA1*LAMBDA2*(6*LAMBDA1-1)*(6*LAMBDA2-1)*(6*LAMBDA2-2)*(6*LAMBDA2-3)
+!         REFRPP2D_TRI_K6%D10=(9*X*(-1.0d0 + 11*X - 36*X**2 + 36*X**3)*(-11 + 12*X + 12*Y))/2.D0 + (9*X*(11 - &
+!         72*X + 108*X**2)*(5 + 6*X**2 - 11*Y + 6*Y**2 + X*(-11 + 12*Y)))/2.D0 + (9*(-1.0d0 + 11*X - 36*X**2 + 36*X**3)*&
+!         (5 + 6*X**2 - 11*Y + 6*Y**2 + X*(-11 + 12*Y)))/2.D0
+!         REFRPP2D_TRI_K6%D01=(9*X*(-1.0d0 + 11*X - 36*X**2 + 36*X**3)*(-11 + 12*X + 12*Y))/2.D0
+!     CASE (6)
+!         REFRPP2D_TRI_K6%D00=(3/10.0D0)*LAMBDA1*LAMBDA2*(6*LAMBDA2-1)*(6*LAMBDA2-2)*(6*LAMBDA2-3)*(6*LAMBDA2-4)
+!         REFRPP2D_TRI_K6%D10=(-18*X*(2 - 25*X + 105*X**2 - 180*X**3 + 108*X**4))/5.D0 - (18*X*(-25 + 210*X - &
+!         540*X**2 + 432*X**3)*(-1.0d0 + X + Y))/5.D0 - (18*(2 - 25*X + 105*X**2 - 180*X**3 + &
+!         108*X**4)*(-1.0d0 + X + Y))/5.D0
+!         REFRPP2D_TRI_K6%D01=(-18*X*(2 - 25*X + 105*X**2 - 180*X**3 + 108*X**4))/5.D0
+! 
+!     CASE (7)
+!         REFRPP2D_TRI_K6%D00=(1/120.0D0)*LAMBDA2*(6*LAMBDA2-1)*(6*LAMBDA2-2)*(6*LAMBDA2-3)*(6*LAMBDA2-4)*(6*LAMBDA2-5)
+!         REFRPP2D_TRI_K6%D10=-1.D0 + (X*(137 + 9*X*(-75 + 170*X - 180*X**2 + 72*X**3)))/10.D0 + &
+!         X*((X*(9*X*(170 - 360*X + 216*X**2) + 9*(-75 + 170*X - 180*X**2 + 72*X**3)))/10.D0 + &
+!         (137 + 9*X*(-75 + 170*X - 180*X**2 + 72*X**3))/10.D0)
+!         REFRPP2D_TRI_K6%D01=0.D0
+!     CASE (8)
+!         REFRPP2D_TRI_K6%D00=(3/10.0D0)*LAMBDA1*LAMBDA3*(6*LAMBDA1-1)*(6*LAMBDA1-2)*(6*LAMBDA1-3)*(6*LAMBDA1-4)
+!         REFRPP2D_TRI_K6%D10=(18*Y*(-87 - 108*X**4 + 580*Y - 1395*Y**2 + 1440*Y**3 - 540*Y**4 - 180*X**3*(-2 + 3*Y) &
+!         - 15*X**2*(31 - 96*Y + 72*Y**2) - 5*X*(-58 + 279*Y - 432*Y**2 + 216*Y**3) - &
+!         X*(432*X**3 + 540*X**2*(-2 + 3*Y) + 30*X*(31 - 96*Y + 72*Y**2) + 5*(-58 + 279*Y - &
+!         432*Y**2 + 216*Y**3))))/5.D0
+!         REFRPP2D_TRI_K6%D01=(18*Y*(-87 + 580*Y - 1395*Y**2 + 1440*Y**3 - 540*Y**4 - X*(-580 + 540*X**3 + 2790*Y - &
+!         4320*Y**2 + 2160*Y**3 + 15*X**2*(-96 + 144*Y) + 5*X*(279 - 864*Y + 648*Y**2))))/5.D0 + &
+! 
+!         (18*(10 - 87*Y + 290*Y**2 - 465*Y**3 + 360*Y**4 - 108*Y**5 - X*(87 + 108*X**4 - 580*Y + &
+!         1395*Y**2 - 1440*Y**3 + 540*Y**4 + 180*X**3*(-2 + 3*Y) + 15*X**2*(31 - 96*Y + 72*Y**2) + &
+!         5*X*(-58 + 279*Y - 432*Y**2 + 216*Y**3))))/5.D0
+!     CASE (9)
+!         REFRPP2D_TRI_K6%D00=(9.0D0)*LAMBDA1*LAMBDA2*LAMBDA3*(6*LAMBDA1-1)*(6*LAMBDA1-2)*(6*LAMBDA1-3)
+!         REFRPP2D_TRI_K6%D10=54*X*Y*(-57 + 144*X**3 + 238*Y - 324*Y**2 + 144*Y**3 + 108*X**2*(-3 + 4*Y) + &
+!         2*X*(119 - 324*Y + 216*Y**2)) + 54*Y*(10 + 36*X**4 - 57*Y + 119*Y**2 - 108*Y**3 + 36*Y**4 + &
+!         36*X**3*(-3 + 4*Y) + X**2*(119 - 324*Y + 216*Y**2) + X*(-57 + 238*Y - 324*Y**2 + 144*Y**3))
+!         REFRPP2D_TRI_K6%D01=54*X*Y*(-57 + 144*X**3 + 238*Y - 324*Y**2 + 144*Y**3 + X**2*(-324 + 432*Y) + &
+!         X*(238 - 648*Y + 432*Y**2)) + 54*X*(10 + 36*X**4 - 57*Y + 119*Y**2 - 108*Y**3 + 36*Y**4 + &
+!         36*X**3*(-3 + 4*Y) + X**2*(119 - 324*Y + 216*Y**2) + X*(-57 + 238*Y - 324*Y**2 + 144*Y**3))
+!     CASE (10)
+!         REFRPP2D_TRI_K6%D00=(18.0D0)*LAMBDA1*LAMBDA2*LAMBDA3*(6*LAMBDA1-1)*(6*LAMBDA1-2)*(6*LAMBDA2-1)
+!         REFRPP2D_TRI_K6%D10=-36*X*(-1.0d0 + 6*X)*Y*(37 + 54*X**2 - 90*Y + 54*Y**2 + 18*X*(-5 + 6*Y)) - &
+!         216*X*Y*(-10 + 18*X**3 + 37*Y - 45*Y**2 + 18*Y**3 + 9*X**2*(-5 + 6*Y) + X*(37 - 90*Y + 54*Y**2)) - &
+!         36*(-1.0d0 + 6*X)*Y*(-10 + 18*X**3 + 37*Y - 45*Y**2 + 18*Y**3 + 9*X**2*(-5 + 6*Y) + X*(37 - 90*Y + 54*Y**2))
+!         REFRPP2D_TRI_K6%D01=-36*X*(-1.0d0 + 6*X)*Y*(37 + 54*X**2 - 90*Y + 54*Y**2 + X*(-90 + 108*Y)) - &
+!         36*X*(-1.0d0 + 6*X)*(-10 + 18*X**3 + 37*Y - 45*Y**2 + 18*Y**3 + 9*X**2*(-5 + 6*Y) + X*(37 - 90*Y + 54*Y**2))
+!     CASE (11)
+!         REFRPP2D_TRI_K6%D00=(18.0D0)*LAMBDA1*LAMBDA2*LAMBDA3*(6*LAMBDA1-1)*(6*LAMBDA2-1)*(6*LAMBDA2-2)
+!         REFRPP2D_TRI_K6%D10=36*X*(1 - 9*X + 18*X**2)*Y*(-11 + 12*X + 12*Y) + 36*X*(-9 + 36*X)*Y*(5 + 6*X**2 - &
+!         11*Y + 6*Y**2 + X*(-11 + 12*Y)) + 36*(1 - 9*X + 18*X**2)*Y*(5 + 6*X**2 - 11*Y + 6*Y**2 + X*(-11 + 12*Y))
+!         REFRPP2D_TRI_K6%D01=36*X*(1 - 9*X + 18*X**2)*Y*(-11 + 12*X + 12*Y) + 36*X*(1 - 9*X + 18*X**2)*&
+!         (5 + 6*X**2 - 11*Y + 6*Y**2 + X*(-11 + 12*Y))
+!     CASE (12)
+!         REFRPP2D_TRI_K6%D00=(9.0D0)*LAMBDA1*LAMBDA2*LAMBDA3*(6*LAMBDA2-1)*(6*LAMBDA2-2)*(6*LAMBDA2-3)
+!         REFRPP2D_TRI_K6%D10=-54*X*(-1.0d0 + 11*X - 36*X**2 + 36*X**3)*Y - 54*X*(11 - 72*X + 108*X**2)*Y*(-1.0d0 + X + Y) - &
+!         54*(-1.0d0 + 11*X - 36*X**2 + 36*X**3)*Y*(-1.0d0 + X + Y)
+!         REFRPP2D_TRI_K6%D01=-54*X*(-1.0d0 + 11*X - 36*X**2 + 36*X**3)*Y - 54*X*(-1.0d0 + 11*X - &
+!         36*X**2 + 36*X**3)*(-1.0d0 + X + Y)
+!     CASE (13)
+!         REFRPP2D_TRI_K6%D00=(3/10.0D0)*LAMBDA2*LAMBDA3*(6*LAMBDA2-4)*(6*LAMBDA2-3)*(6*LAMBDA2-2)*(6*LAMBDA2-1)
+!         REFRPP2D_TRI_K6%D10=(18*X*(-25 + 210*X - 540*X**2 + 432*X**3)*Y)/5.D0 + (18*(2 - 25*X + 105*X**2 - &
+!         180*X**3 + 108*X**4)*Y)/5.D0
+!         REFRPP2D_TRI_K6%D01=(18*X*(2 - 25*X + 105*X**2 - 180*X**3 + 108*X**4))/5.D0
+!     CASE (14)
+!         REFRPP2D_TRI_K6%D00=(3/4.0D0)*LAMBDA1*LAMBDA3*(6*LAMBDA1-1)*(6*LAMBDA1-2)*(6*LAMBDA1-3)*(6*LAMBDA3-1)
+!         REFRPP2D_TRI_K6%D10=(9*Y*(-1.0d0 + 6*Y)*(-57 + 144*X**3 + 238*Y - 324*Y**2 + 144*Y**3 + 108*X**2*(-3 + 4*Y) + &
+!         2*X*(119 - 324*Y + 216*Y**2)))/2.D0
+!         REFRPP2D_TRI_K6%D01=(9*Y*(-1.0d0 + 6*Y)*(-57 + 144*X**3 + 238*Y - 324*Y**2 + 144*Y**3 + X**2*(-324 + 432*Y) + &
+!         X*(238 - 648*Y + 432*Y**2)))/2.D0 + 27*Y*(10 + 36*X**4 - 57*Y + 119*Y**2 - 108*Y**3 + 36*Y**4 + &
+!         36*X**3*(-3 + 4*Y) + X**2*(119 - 324*Y + 216*Y**2) + X*(-57 + 238*Y - 324*Y**2 + 144*Y**3)) + &
+!         (9*(-1.0d0 + 6*Y)*(10 + 36*X**4 - 57*Y + 119*Y**2 - 108*Y**3 + 36*Y**4 + 36*X**3*(-3 + 4*Y) + &
+!         X**2*(119 - 324*Y + 216*Y**2) + X*(-57 + 238*Y - 324*Y**2 + 144*Y**3)))/2.D0
+!     CASE (15)
+!         REFRPP2D_TRI_K6%D00=(18.0D0)*LAMBDA1*LAMBDA2*LAMBDA3*(6*LAMBDA1-1)*(6*LAMBDA1-2)*(6*LAMBDA3-1)
+!         REFRPP2D_TRI_K6%D10=-36*X*Y*(-1.0d0 + 6*Y)*(37 + 54*X**2 - 90*Y + 54*Y**2 + 18*X*(-5 + 6*Y)) - &
+!         36*Y*(-1.0d0 + 6*Y)*(-10 + 18*X**3 + 37*Y - 45*Y**2 + 18*Y**3 + 9*X**2*(-5 + 6*Y) + X*(37 - 90*Y + 54*Y**2))
+!         REFRPP2D_TRI_K6%D01=-36*X*Y*(-1.0d0 + 6*Y)*(37 + 54*X**2 - 90*Y + 54*Y**2 + X*(-90 + 108*Y)) - &
+!         216*X*Y*(-10 + 18*X**3 + 37*Y - 45*Y**2 + 18*Y**3 + 9*X**2*(-5 + 6*Y) + X*(37 - 90*Y + 54*Y**2)) - &
+!         36*X*(-1.0d0 + 6*Y)*(-10 + 18*X**3 + 37*Y - 45*Y**2 + 18*Y**3 + 9*X**2*(-5 + 6*Y) + X*(37 - 90*Y + 54*Y**2))
+!     CASE (16)
+!         REFRPP2D_TRI_K6%D00=(27.0D0)*LAMBDA1*LAMBDA2*LAMBDA3*(6*LAMBDA1-1)*(6*LAMBDA2-1)*(6*LAMBDA3-1)
+!         REFRPP2D_TRI_K6%D10=27*X*(-1.0d0 + 6*X)*Y*(-1.0d0 + 6*Y)*(-11 + 12*X + 12*Y) + 162*X*Y*(-1.0d0 + 6*Y)*(5 + 6*X**2 - &
+!         11*Y + 6*Y**2 + X*(-11 + 12*Y)) + 27*(-1.0d0 + 6*X)*Y*(-1.0d0 + 6*Y)*(5 + 6*X**2 - 11*Y + 6*Y**2 + X*(-11 + 12*Y))
+!         REFRPP2D_TRI_K6%D01=27*X*(-1.0d0 + 6*X)*Y*(-1.0d0 + 6*Y)*(-11 + 12*X + 12*Y) + 162*X*(-1.0d0 + 6*X)*Y*(5 + 6*X**2 - &
+!         11*Y + 6*Y**2 + X*(-11 + 12*Y)) + 27*X*(-1.0d0 + 6*X)*(-1.0d0 + 6*Y)*(5 + 6*X**2 - 11*Y + 6*Y**2 + X*(-11 + 12*Y))
+!     CASE (17)
+!         REFRPP2D_TRI_K6%D00=(18.0D0)*LAMBDA1*LAMBDA2*LAMBDA3*(6*LAMBDA2-1)*(6*LAMBDA2-2)*(6*LAMBDA3-1)
+!         REFRPP2D_TRI_K6%D10=-36*X*(1 - 9*X + 18*X**2)*Y*(-1.0d0 + 6*Y) - 36*X*(-9 + 36*X)*Y*(-1.0d0 + X + Y)*(-1.0d0 + 6*Y) - &
+!         36*(1 - 9*X + 18*X**2)*Y*(-1.0d0 + X + Y)*(-1.0d0 + 6*Y)
+!         REFRPP2D_TRI_K6%D01=-216*X*(1 - 9*X + 18*X**2)*Y*(-1.0d0 + X + Y) - 36*X*(1 - 9*X + 18*X**2)*Y*(-1.0d0 + 6*Y) - &
+!         36*X*(1 - 9*X + 18*X**2)*(-1.0d0 + X + Y)*(-1.0d0 + 6*Y)
+!     CASE (18)
+!         REFRPP2D_TRI_K6%D00=(3/4.0D0)*LAMBDA2*LAMBDA3*(6*LAMBDA2-1)*(6*LAMBDA2-2)*(6*LAMBDA2-3)*(6*LAMBDA3-1)
+!         REFRPP2D_TRI_K6%D10=(9*X*(11 - 72*X + 108*X**2)*Y*(-1.0d0 + 6*Y))/2.D0 + (9*(-1.0d0 + 11*X - &
+!         36*X**2 + 36*X**3)*Y*(-1.0d0 + 6*Y))/2.D0
+!         REFRPP2D_TRI_K6%D01=27*X*(-1.0d0 + 11*X - 36*X**2 + 36*X**3)*Y + (9*X*(-1.0d0 + 11*X - 36*X**2 + 36*X**3)*&
+!         (-1.0d0 + 6*Y))/2.D0
+!     CASE (19)
+!         REFRPP2D_TRI_K6%D00=LAMBDA1*LAMBDA3*(6*LAMBDA1-1)*(6*LAMBDA1-2)*(6*LAMBDA3-2)*(6*LAMBDA3-1)
+!         REFRPP2D_TRI_K6%D10=-4*Y*(1 - 9*Y + 18*Y**2)*(37 + 54*X**2 - 90*Y + 54*Y**2 + 18*X*(-5 + 6*Y))
+!         REFRPP2D_TRI_K6%D01=-4*Y*(1 - 9*Y + 18*Y**2)*(37 + 54*X**2 - 90*Y + 54*Y**2 + X*(-90 + 108*Y)) - &
+!         4*Y*(-9 + 36*Y)*(-10 + 18*X**3 + 37*Y - 45*Y**2 + 18*Y**3 + 9*X**2*(-5 + 6*Y) + X*(37 - 90*Y + 54*Y**2)) -&
+!         4*(1 - 9*Y + 18*Y**2)*(-10 + 18*X**3 + 37*Y - 45*Y**2 + 18*Y**3 + 9*X**2*(-5 + 6*Y) + &
+!         X*(37 - 90*Y + 54*Y**2))
+!     CASE (20)
+!         REFRPP2D_TRI_K6%D00=(18.0D0)*LAMBDA1*LAMBDA2*LAMBDA3*(6*LAMBDA1-1)*(6*LAMBDA3-2)*(6*LAMBDA3-1)
+!         REFRPP2D_TRI_K6%D10=36*X*Y*(-11 + 12*X + 12*Y)*(1 - 9*Y + 18*Y**2) + 36*Y*(1 - 9*Y + 18*Y**2)*&
+!         (5 + 6*X**2 - 11*Y + 6*Y**2 + X*(-11 + 12*Y))
+!         REFRPP2D_TRI_K6%D01=36*X*Y*(-11 + 12*X + 12*Y)*(1 - 9*Y + 18*Y**2) + 36*X*Y*(-9 + 36*Y)*(5 + 6*X**2 - &
+!         11*Y + 6*Y**2 + X*(-11 + 12*Y)) + 36*X*(1 - 9*Y + 18*Y**2)*(5 + 6*X**2 - 11*Y + 6*Y**2 + X*(-11 + 12*Y))
+!     CASE (21)
+!         REFRPP2D_TRI_K6%D00=(18.0D0)*LAMBDA1*LAMBDA2*LAMBDA3*(6*LAMBDA2-1)*(6*LAMBDA3-2)*(6*LAMBDA3-1)
+!         REFRPP2D_TRI_K6%D10=-36*X*(-1.0d0 + 6*X)*Y*(1 - 9*Y + 18*Y**2) - 216*X*Y*(-1.0d0 + X + Y)*(1 - 9*Y + 18*Y**2) - &
+!         36*(-1.0d0 + 6*X)*Y*(-1.0d0 + X + Y)*(1 - 9*Y + 18*Y**2)
+!         REFRPP2D_TRI_K6%D01=-36*X*(-1.0d0 + 6*X)*Y*(-1.0d0 + X + Y)*(-9 + 36*Y) - 36*X*(-1.0d0 + 6*X)*Y*(1 - 9*Y + 18*Y**2) - &
+!         36*X*(-1.0d0 + 6*X)*(-1.0d0 + X + Y)*(1 - 9*Y + 18*Y**2)
+!     CASE (22)
+!         REFRPP2D_TRI_K6%D00=LAMBDA2*LAMBDA3*(6*LAMBDA2-1)*(6*LAMBDA2-2)*(6*LAMBDA3-1)*(6*LAMBDA3-2)
+!         REFRPP2D_TRI_K6%D10=4*X*(-9 + 36*X)*Y*(1 - 9*Y + 18*Y**2) + 4*(1 - 9*X + 18*X**2)*Y*(1 - 9*Y + 18*Y**2)
+!         REFRPP2D_TRI_K6%D01=4*X*(1 - 9*X + 18*X**2)*Y*(-9 + 36*Y) + 4*X*(1 - 9*X + 18*X**2)*(1 - 9*Y + 18*Y**2)
+!     CASE (23)
+!         REFRPP2D_TRI_K6%D00=(3/4.0D0)*LAMBDA1*LAMBDA3*(6*LAMBDA1-1)*(6*LAMBDA3-1)*(6*LAMBDA3-2)*(6*LAMBDA3-3)
+!         REFRPP2D_TRI_K6%D10=(9*Y*(-11 + 12*X + 12*Y)*(-1.0d0 + 11*Y - 36*Y**2 + 36*Y**3))/2.D0
+!         REFRPP2D_TRI_K6%D01=(9*Y*(-11 + 12*X + 12*Y)*(-1.0d0 + 11*Y - 36*Y**2 + 36*Y**3))/2.D0 + &
+!         (9*Y*(11 - 72*Y + 108*Y**2)*(5 + 6*X**2 - 11*Y + 6*Y**2 + X*(-11 + 12*Y)))/2.D0 + (9*(-1.0d0 + 11*Y - &
+! 
+!         36*Y**2 + 36*Y**3)*(5 + 6*X**2 - 11*Y + 6*Y**2 + X*(-11 + 12*Y)))/2.D0
+!     CASE (24)
+!         REFRPP2D_TRI_K6%D00=(9.0D0)*LAMBDA1*LAMBDA2*LAMBDA3*(6*LAMBDA3-1)*(6*LAMBDA3-2)*(6*LAMBDA3-3)
+!         REFRPP2D_TRI_K6%D10=-54*X*Y*(-1.0d0 + 11*Y - 36*Y**2 + 36*Y**3) - 54*Y*(-1.0d0 + X + Y)*&
+!         (-1.0d0 + 11*Y - 36*Y**2 + 36*Y**3)
+!         REFRPP2D_TRI_K6%D01=-54*X*Y*(-1.0d0 + X + Y)*(11 - 72*Y + 108*Y**2) - 54*X*Y*(-1.0d0 + 11*Y - 36*Y**2 + 36*Y**3) - &
+!         54*X*(-1.0d0 + X + Y)*(-1.0d0 + 11*Y - 36*Y**2 + 36*Y**3)
+!     CASE (25)
+!         REFRPP2D_TRI_K6%D00=(3/4.0D0)*LAMBDA2*LAMBDA3*(6*LAMBDA2-1)*(6*LAMBDA3-3)*(6*LAMBDA3-2)*(6*LAMBDA3-1)
+!         REFRPP2D_TRI_K6%D10=27*X*Y*(-1.0d0 + 11*Y - 36*Y**2 + 36*Y**3) + (9*(-1.0d0 + 6*X)*Y*(-1.0d0 + 11*Y - &
+!         36*Y**2 + 36*Y**3))/2.D0
+!         REFRPP2D_TRI_K6%D01=(9*X*(-1.0d0 + 6*X)*Y*(11 - 72*Y + 108*Y**2))/2.D0 + (9*X*(-1.0d0 + 6*X)*&
+!         (-1.0d0 + 11*Y - 36*Y**2 + 36*Y**3))/2.D0
+!     CASE (26)
+!         REFRPP2D_TRI_K6%D00=(3/10.0D0)*LAMBDA1*LAMBDA3*(6*LAMBDA3-4)*(6*LAMBDA3-3)*(6*LAMBDA3-2)*(6*LAMBDA3-1)
+!         REFRPP2D_TRI_K6%D10=(-18*Y*(2 - 25*Y + 105*Y**2 - 180*Y**3 + 108*Y**4))/5.D0
+!         REFRPP2D_TRI_K6%D01=(-18*Y*(-1.0d0 + X + Y)*(-25 + 210*Y - 540*Y**2 + 432*Y**3))/5.D0 - &
+!         (18*Y*(2 - 25*Y + 105*Y**2 - 180*Y**3 + 108*Y**4))/5.D0 - (18*(-1.0d0 + X + Y)*(2 - 25*Y + 105*Y**2 - &
+!         180*Y**3 + 108*Y**4))/5.D0
+!     CASE (27)
+!         REFRPP2D_TRI_K6%D00=(3/10.0D0)*LAMBDA2*LAMBDA3*(6*LAMBDA3-4)*(6*LAMBDA3-3)*(6*LAMBDA3-2)*(6*LAMBDA3-1)
+!         REFRPP2D_TRI_K6%D10=Y*(7.2 + Y*(-90 + (54*Y*(35 - 60*Y + 36*Y**2))/5.D0))
+!         REFRPP2D_TRI_K6%D01=X*Y*(-90 + (54*Y*(35 - 60*Y + 36*Y**2))/5.D0 + Y*((54*Y*(-60 + 72*Y))/5.D0 + &
+!         (54*(35 - 60*Y + 36*Y**2))/5.D0)) + X*(7.2 + Y*(-90 + (54*Y*(35 - 60*Y + 36*Y**2))/5.D0))
+!     CASE (28)
+!         REFRPP2D_TRI_K6%D00=(1/120.0D0)*LAMBDA3*(6*LAMBDA3-1)*(6*LAMBDA3-2)*(6*LAMBDA3-3)*(6*LAMBDA3-4)*(6*LAMBDA3-5)
+!         REFRPP2D_TRI_K6%D10=0.D0
+!         REFRPP2D_TRI_K6%D01=-1 + (Y*(137 + 9*Y*(-75 + 170*Y - 180*Y**2 + 72*Y**3)))/10.D0 + &
+!         Y*((Y*(9*Y*(170 - 360*Y + 216*Y**2) + 9*(-75 + 170*Y - 180*Y**2 + 72*Y**3)))/10.D0 + (137 + 9*Y*&
+!         (-75 + 170*Y - 180*Y**2 + 72*Y**3))/10.D0)
+! 	CASE DEFAULT
+! 		PRINT*, 'ERROR CODE - REFRPPTRIK6'
+! END SELECT
+! 
+! END FUNCTION REFRPP2D_TRI_K6
+
+REAL*8 FUNCTION REF1D(X,INDX,DIFF)
+
+	REAL*8, INTENT(IN)::X
+	INTEGER, INTENT(IN)::INDX,DIFF
+	
+	IF (X<-1.0D0 .OR. X>1.0D0) THEN
+		IF (DIFF==0) THEN
+			REF1D = 0.0D0
+		ELSEIF (DIFF==1) THEN
+			REF1D = 0.0D0
+		ELSEIF (DIFF==2) THEN
+			REF1D = 0.0D0
+		ENDIF
+		GOTO 111
+	ENDIF
+	
+	IF(IORDER.EQ.2)THEN
+		IF(DIFF.EQ.0)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=((-1.0D0+X)*X)/2.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=1.0D0-X**2
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(X*(1.0D0+X))/2.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.1)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=-0.50D0+X
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=-2.0D0*X
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=0.50D0+X
+			ENDIF
+		ENDIF
+	ELSEIF(IORDER.EQ.3)THEN
+		IF(DIFF.EQ.0)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=-((-1+X)*(-1+3*X)*(1+3*X))/16.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(9*(-1+X)*(1+X)*(-1+3*X))/16.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(-9*(-1+X)*(1+X)*(1+3*X))/16.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=((1+X)*(-1+3*X)*(1+3*X))/16.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.1)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(1.0D0+18*X-27*X**2)/16.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(9*(-3.0D0-2*X+9*X**2))/16.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(-9*(-3.0D0+2*X+9*X**2))/16.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(-1.0D0+18*X+27*X**2)/16.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.2)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(-9.0D0*(-1.0D0 + 3*X))/8.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(9.0D0*(-1.0D0 + 9*X))/8.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(-9.0D0*(1.0D0 + 9*X))/8.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(9.0D0*(1.0D0 + 3*X))/8.0D0
+			ENDIF
+		ENDIF
+	ELSEIF(IORDER.EQ.4)THEN
+		IF(DIFF.EQ.0)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(2.0D0*(-1.0D0+X)*(-0.50D0+X)*X*(0.50D0+X))/3.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(-8.0D0*(-1.0D0+X)*(-0.50D0+X)*X*(1.0D0+X))/3.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=4*(-1.0D0+X)*(-0.50D0+X)*(0.50D0+X)*(1.0D0+X)
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(-8.0D0*(-1.0D0+X)*X*(0.50D0+X)*(1.0D0+X))/3.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(2.0D0*(-0.50D0+X)*X*(0.50D0+X)*(1.0D0+X))/3.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.1)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(1/6.0D0)-(X/3)-(2*X**2)+(8*X**3/3)
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(-4*(1-4*X-3*X**2+8*X**3))/3.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=2*X*(-5+8*X**2)
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(-4*(-1-4*X+3*X**2+8*X**3))/3.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=-(1/6.0D0)-(X/3)+(2*X**2)+(8*X**3/3)
+			ENDIF
+		ELSEIF (DIFF.EQ.2) THEN
+			IF(INDX.EQ.0)THEN
+				REF1D = -1.D0/3.D0 - 4.D0*X + 8.D0*X**2
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D = -(4.D0/3.D0)*(-4.D0 - 6.D0*X + 24.D0*X**2)
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D = 32.D0*X**2 + 2.D0*(-5.D0 + 8.D0*X**2)
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D = -(4.D0/3.D0)*(-4.D0 + 6.D0*X + 24.D0*X**2)
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D = -1.D0/3.D0 + 4.D0*X + 8.D0*X**2
+			ENDIF
+		ENDIF
+	ELSEIF(IORDER.EQ.5)THEN
+		IF(DIFF.EQ.0)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=-((-1+X)*(-3+5*X)*(-1+5*X)*(1+5*X)*(3+5*X))/768.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(25*(-1+X)*(1+X)*(-3+5*X)*(-1+5*X)*(1+5*X))/768.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(-25*(-1+X)*(1+X)*(-3+5*X)*(-1+5*X)*(3+5*X))/384.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(25*(-1+X)*(1+X)*(-3+5*X)*(1+5*X)*(3+5*X))/384.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(-25*(-1+X)*(1+X)*(-1+5*X)*(1+5*X)*(3+5*X))/768.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=((1+X)*(-3+5*X)*(-1+5*X)*(1+5*X)*(3+5*X))/768.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.1)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(-9-500*X+750*X**2+2500*X**3-3125*X**4)/768.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(25*(5+156*X-390*X**2-300*X**3+625*X**4))/768.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(-25*(45+68*X-510*X**2-100*X**3+625*X**4))/384.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(25*(45-68*X-510*X**2+100*X**3+625*X**4))/384.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(-25*(5-156*X-390*X**2+300*X**3+625*X**4))/768.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=(9-500*X-750*X**2+2500*X**3+3125*X**4)/768.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.2)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(-125.0D0*(1 - 3*X - 15*X**2 + 25*X**3))/192.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(25.0D0*(39 - 195*X - 225*X**2 + 625*X**3))/192.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(-25.0D0*(17 - 255*X - 75*X**2 + 625*X**3))/96.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(25.0D0*(-17 - 255*X + 75*X**2 + 625*X**3))/96.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(-25.0D0*(-39 - 195*X + 225*X**2 + 625*X**3))/192.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=(125.0D0*(-1 - 3*X + 15*X**2 + 25*X**3))/192.0D0
+			ENDIF
+		ENDIF
+	ELSEIF(IORDER.EQ.6)THEN
+		IF(DIFF.EQ.0)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=((-1+X)*X*(-2+3*X)*(-1+3*X)*(1+3*X)*(2+3*X))/80.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(-9*(-1+X)*X*(1+X)*(-2+3*X)*(-1+3*X)*(1+3*X))/40.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(9*(-1+X)*X*(1+X)*(-2+3*X)*(-1+3*X)*(2+3*X))/16.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(4-49*X**2+126*X**4-81*X**6)/4.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(9*(-1+X)*X*(1+X)*(-2+3*X)*(1+3*X)*(2+3*X))/16.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=(-9*(-1+X)*X*(1+X)*(-1+3*X)*(1+3*X)*(2+3*X))/40.0D0
+			ELSEIF(INDX.EQ.6)THEN
+				REF1D=(X*(1+X)*(-2+3*X)*(-1+3*X)*(1+3*X)*(2+3*X))/80.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.1)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(-4+8*X+135*X**2-180*X**3-405*X**4+486*X**5)/80.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(-9*(-1+3*X+30*X**2-60*X**3-45*X**4+81*X**5))/20.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(9*(-4+24*X+39*X**2-156*X**3-45*X**4+162*X**5))/16.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(-49*X+252*X**3-243*X**5)/2.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(9*(4+24*X-39*X**2-156*X**3+45*X**4+162*X**5))/16.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=(-9*(1+3*X-30*X**2-60*X**3+45*X**4+81*X**5))/20.0D0
+			ELSEIF(INDX.EQ.6)THEN
+				REF1D=(4+8*X-135*X**2-180*X**3+405*X**4+486*X**5)/80.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.2)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(8 + 270*X - 540*X**2 - 1620*X**3 + 2430*X**4)/80.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(-9*(3 + 60*X - 180*X**2 - 180*X**3 + 405*X**4))/20.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(9*(24 + 78*X - 468*X**2 - 180*X**3 + 810*X**4))/16.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(-49 + 756*X**2 - 1215*X**4)/2.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(9*(24 - 78*X - 468*X**2 + 180*X**3 + 810*X**4))/16.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=(-9*(3 - 60*X - 180*X**2 + 180*X**3 + 405*X**4))/20.0D0
+			ELSEIF(INDX.EQ.6)THEN
+				REF1D=(8 - 270*X - 540*X**2 + 1620*X**3 + 2430*X**4)/80.0D0
+			ENDIF
+		ENDIF
+	ELSEIF(IORDER.EQ.7)THEN
+		IF(DIFF.EQ.0)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=-((-1+X)*(-5+7*X)*(-3+7*X)*(-1+7*X)*(1+7*X)*(3+7*X)*(5+7*X))/92160.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(49*(-1+X)*(1+X)*(-5+7*X)*(-3+7*X)*(-1+7*X)*(1+7*X)*(3+7*X))/92160.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(-49*(-1+X)*(1+X)*(-5+7*X)*(-3+7*X)*(-1+7*X)*(1+7*X)*(5+7*X))/30720.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(49*(-1+X)*(1+X)*(-5+7*X)*(-3+7*X)*(-1+7*X)*(3+7*X)*(5+7*X))/18432.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(-49*(-1+X)*(1+X)*(-5+7*X)*(-3+7*X)*(1+7*X)*(3+7*X)*(5+7*X))/18432.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=(49*(-1+X)*(1+X)*(-5+7*X)*(-1+7*X)*(1+7*X)*(3+7*X)*(5+7*X))/30720.0D0
+			ELSEIF(INDX.EQ.6)THEN
+				REF1D=(-49*(-1+X)*(1+X)*(-3+7*X)*(-1+7*X)*(1+7*X)*(3+7*X)*(5+7*X))/92160.0D0
+			ELSEIF(INDX.EQ.7)THEN
+				REF1D=((1+X)*(-5+7*X)*(-3+7*X)*(-1+7*X)*(1+7*X)*(3+7*X)*(5+7*X))/92160.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.1)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(225+25382*X-38073*X**2-336140*X**3+420175*X**4+705894*X**5-823543*X**6)/92160.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(49*(-63-4990*X+10479*X**2+57820*X**3-101185*X**4-72030*X**5+117649*X**6))/92160.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(-49*(-175-7794*X+27279*X**2+44100*X**3-128625*X**4-43218*X**5+117649*X**6))/30720.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(49*(-1575-3782*X+39711*X**2+16268*X**3-142345*X**4-14406*X**5+117649*X**6))/18432.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(-49*(-1575+3782*X+39711*X**2-16268*X**3-142345*X**4+14406*X**5+117649*X**6))/18432.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=(49*(-175+7794*X+27279*X**2-44100*X**3-128625*X**4+43218*X**5+117649*X**6))/30720.0D0
+			ELSEIF(INDX.EQ.6)THEN
+				REF1D=(-49*(-63+4990*X+10479*X**2-57820*X**3-101185*X**4+72030*X**5+117649*X**6))/92160.0D0
+			ELSEIF(INDX.EQ.7)THEN
+				REF1D=(-225+25382*X+38073*X**2-336140*X**3-420175*X**4+705894*X**5+823543*X**6)/92160.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.2)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(-343.0D0*(-37.0D0 + 111*X + 1470*X**2 - 2450*X**3 - 5145*X**4 + 7203*X**5))/46080.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(49.0D0*(-2495.0D0 + 10479*X + 86730*X**2 - 202370*X**3 - 180075*X**4 + 352947*X**5))/46080.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(-49.0D0*(-1299.0D0 + 9093*X + 22050*X**2 - 85750*X**3 - 36015*X**4 + 117649*X**5))/5120.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(49.0D0*(-1891.0D0 + 39711*X + 24402*X**2 - 284690*X**3 - 36015*X**4 + 352947*X**5))/9216.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(-49.0D0*(1891.0D0 + 39711*X - 24402*X**2 - 284690*X**3 + 36015*X**4 + 352947*X**5))/9216.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=(49.0D0*(1299.0D0 + 9093*X - 22050*X**2 - 85750*X**3 + 36015*X**4 + 117649*X**5))/5120.0D0
+			ELSEIF(INDX.EQ.6)THEN
+				REF1D=(-49.0D0*(2495.0D0 + 10479*X - 86730*X**2 - 202370*X**3 + 180075*X**4 + 352947*X**5))/46080.0D0
+			ELSEIF(INDX.EQ.7)THEN
+				REF1D=(343.0D0*(37.0D0 + 111*X - 1470*X**2 - 2450*X**3 + 5145*X**4 + 7203*X**5))/46080.0D0
+			ENDIF
+		ENDIF
+	ELSEIF(IORDER.EQ.8)THEN
+		IF(DIFF.EQ.0)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D =((-1+X)*X*(-1+2*X)*(1+2*X)*(-3+4*X)*(-1+4*X)*(1+4*X)*(3+4*X))/630.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(-16*(-1+X)*X*(1+X)*(-1+2*X)*(1+2*X)*(-3+4*X)*(-1+4*X)*(1+4*X))/315.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(4*(-1+X)*X*(1+X)*(-1+2*X)*(-3+4*X)*(-1+4*X)*(1+4*X)*(3+4*X))/45.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(-16*(-1+X)*X*(1+X)*(-1+2*X)*(1+2*X)*(-3+4*X)*(-1+4*X)*(3+4*X))/45.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(9.0D0-205*X**2+1092*X**4-1920*X**6+1024*X**8)/9.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=(-16*(-1+X)*X*(1+X)*(-1+2*X)*(1+2*X)*(-3+4*X)*(1+4*X)*(3+4*X))/45.0D0
+			ELSEIF(INDX.EQ.6)THEN
+				REF1D=(4*(-1+X)*X*(1+X)*(1+2*X)*(-3+4*X)*(-1+4*X)*(1+4*X)*(3+4*X))/45.0D0
+			ELSEIF(INDX.EQ.7)THEN
+				REF1D=(-16*(-1+X)*X*(1+X)*(-1+2*X)*(1+2*X)*(-1+4*X)*(1+4*X)*(3+4*X))/315.0D0
+			ELSEIF(INDX.EQ.8)THEN
+				REF1D=(X*(1+X)*(-1+2*X)*(1+2*X)*(-3+4*X)*(-1+4*X)*(1+4*X)*(3+4*X))/630.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.1)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(9-18*X-588*X**2+784*X**3+4480*X**4-5376*X**5-7168*X**6+8192*X**7)/630.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(-16*(3-8*X-189*X**2+336*X**3+1260*X**4-2016*X**5-1344*X**6+2048*X**7))/315.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(4*(9-36*X-507*X**2+1352*X**3+2080*X**4-4992*X**5-1792*X**6+4096*X**7))/45.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(-16*(9-72*X-183*X**2+976*X**3+580*X**4-2784*X**5-448*X**6+2048*X**7))/45.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(2*X*(-205+2184*X**2-5760*X**4+4096*X**6))/9.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=(-16*(-9-72*X+183*X**2+976*X**3-580*X**4-2784*X**5+448*X**6+2048*X**7))/45.0D0
+			ELSEIF(INDX.EQ.6)THEN
+				REF1D=(4*(-9-36*X+507*X**2+1352*X**3-2080*X**4-4992*X**5+1792*X**6+4096*X**7))/45.0D0
+			ELSEIF(INDX.EQ.7)THEN
+				REF1D=(-16*(-3-8*X+189*X**2+336*X**3-1260*X**4-2016*X**5+1344*X**6+2048*X**7))/315.0D0
+			ELSEIF(INDX.EQ.8)THEN
+				REF1D=(-9-18*X+588*X**2+784*X**3-4480*X**4-5376*X**5+7168*X**6+8192*X**7)/630.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.2) THEN
+			IF(INDX.EQ.0) THEN
+				REF1D = (-9D0 - 588*X + 1176*X**2 + 8960*X**3 - 13440*X**4 - 21504*X**5 + 28672*X**6)/315.D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D = (-32*(-4D0 - 189*X + 504*X**2 + 2520*X**3 - 5040*X**4 - 4032*X**5 + 7168*X**6))/315.D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D = (8*(-18 - 507*X + 2028*X**2 + 4160*X**3 - 12480*X**4 - 5376*X**5 + 14336*X**6))/45.D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D = (-32*(-36D0 - 183*X + 1464*X**2 + 1160*X**3 - 6960*X**4 - 1344*X**5 + 7168*X**6))/45.D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D = -45.55555555555555550D0 + 1456*X**2 - 6400*X**4 + (57344*X**6)/9.D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D = (-32*(-36D0 + 183*X + 1464*X**2 - 1160*X**3 - 6960*X**4 + 1344*X**5 + 7168*X**6))/45.D0
+			ELSEIF(INDX.EQ.6)THEN
+				REF1D = (8*(-18D0 + 507*X + 2028*X**2 - 4160*X**3 - 12480*X**4 + 5376*X**5 + 14336*X**6))/45.D0
+			ELSEIF(INDX.EQ.7)THEN
+				REF1D = (-32*(-4D0 + 189*X + 504*X**2 - 2520*X**3 - 5040*X**4 + 4032*X**5 + 7168*X**6))/315.D0
+			ELSEIF(INDX.EQ.8)THEN
+				REF1D = (-9D0 + 588*X + 1176*X**2 - 8960*X**3 - 13440*X**4 + 21504*X**5 + 28672*X**6)/315.D0
+			ENDIF
+		ENDIF
+	ELSEIF (IORDER.EQ.9) THEN
+		IF (DIFF.EQ.0) THEN
+			IF (INDX.EQ.0) THEN
+				REF1D = -((-1.0d0 + x)*(-1.0d0 + 3*x)*(1.0d0 + 3*x)*(-7 + 9*x)*(-5 + 9*x)*(-1.0d0 + 9*x)* &
+								(1.0d0 + 9*x)*(5 + 9*x)*(7 + 9*x))/(2.293760d0*10.0d0**6)
+			ELSEIF (INDX.EQ.1) THEN
+				REF1D = (81.0d0*(-1.0d0 + x)*(1.0d0 + x)*(-1.0d0 + 3*x)*(1.0d0 + 3*x)*(-7 + 9*x)*(-5 + 9*x)* &
+								(-1.0d0 + 9*x)*(1.0d0 + 9*x)*(5 + 9*x))/(2.293760d0*10.0d0**6)
+			ELSEIF (INDX.EQ.2) THEN
+				REF1D = (-81.0d0*(-1.0d0 + x)*(1.0d0 + x)*(-1.0d0 + 3*x)*(1.0d0 + 3*x)*(-7 + 9*x)*(-5 + 9*x)* &
+								(-1.0d0 + 9*x)*(1.0d0 + 9*x)*(7 + 9*x))/573440.0d0
+			ELSEIF (INDX.EQ.3) THEN
+				REF1D = (9*(-1.0d0 + x)*(1.0d0 + x)*(-1.0d0 + 3*x)*(-7 + 9*x)*(-5 + 9*x)*(-1.0d0 + 9*x)* &
+								(1.0d0 + 9*x)*(5 + 9*x)*(7 + 9*x))/81920.0d0
+			ELSEIF (INDX.EQ.4) THEN
+				REF1D = (-81.0d0*(-1.0d0 + x)*(1.0d0 + x)*(-1.0d0 + 3*x)*(1.0d0 + 3*x)*(-7 + 9*x)*(-5 + 9*x)* &
+								(-1.0d0 + 9*x)*(5 + 9*x)*(7 + 9*x))/163840.0d0
+			ELSEIF (INDX.EQ.5) THEN
+				REF1D = (81.0d0*(-1.0d0 + x)*(1.0d0 + x)*(-1.0d0 + 3*x)*(1.0d0 + 3*x)*(-7 + 9*x)*(-5 + 9*x)* &
+								(1.0d0 + 9*x)*(5 + 9*x)*(7 + 9*x))/163840.0d0
+			ELSEIF (INDX.EQ.6) THEN
+				REF1D = (-9*(-1.0d0 + x)*(1.0d0 + x)*(1.0d0 + 3*x)*(-7 + 9*x)*(-5 + 9*x)*(-1.0d0 + 9*x)* &
+								(1.0d0 + 9*x)*(5 + 9*x)*(7 + 9*x))/81920.0d0
+			ELSEIF (INDX.EQ.7) THEN
+				REF1D = (81.0d0*(-1.0d0 + x)*(1.0d0 + x)*(-1.0d0 + 3*x)*(1.0d0 + 3*x)*(-7 + 9*x)* &
+								(-1.0d0 + 9*x)*(1.0d0 + 9*x)*(5 + 9*x)*(7 + 9*x))/573440.0d0
+			ELSEIF (INDX.EQ.8) THEN
+				REF1D = (-81.0d0*(-1.0d0 + x)*(1.0d0 + x)*(-1.0d0 + 3*x)*(1.0d0 + 3*x)*(-5 + 9*x)* &
+								(-1.0d0 + 9*x)*(1.0d0 + 9*x)*(5 + 9*x)*(7 + 9*x))/(2.293760d0*10.0d0**6)
+			ELSEIF (INDX.EQ.9) THEN
+				REF1D = ((1.0d0 + x)*(-1.0d0 + 3*x)*(1.0d0 + 3*x)*(-7 + 9*x)*(-5 + 9*x)*(-1.0d0 + 9*x)* &
+								(1.0d0 + 9*x)*(5 + 9*x)*(7 + 9*x))/(2.293760d0*10.0d0**6)
+			ENDIF
+		ELSEIF (DIFF.EQ.1) THEN
+			IF (INDX.EQ.0) THEN
+				REF1D = (-1225 - 232488*x + 348732*x**2 + 5756184*x**3 - 7195230*x**4 - 29760696*x**5 + &
+								34720812*x**6 + 38263752*x**7 - 43046721*x**8)/(2.293760d0*10.0d0**6)
+			ELSEIF (INDX.EQ.1) THEN
+				REF1D = (81.0d0*(225 + 32984*x - 63612*x**2 - 779688*x**3 + 1253070*x**4 + 3551688*x**5 - &
+								5327532*x**6 - 3306744*x**7 + 4782969*x**8))/(2.293760d0*10.0d0**6)
+			ELSEIF (INDX.EQ.2) THEN
+				REF1D = (-81.0d0*(441 + 45400*x - 122580*x**2 - 950040*x**3 + 2137590*x**4 + 3061800*x**5 - &
+								6429780*x**6 - 2361960*x**7 + 4782969*x**8))/573440.0d0
+			ELSEIF (INDX.EQ.3) THEN
+				REF1D = (9*(3675 + 212888*x - 957996*x**2 - 2389176*x**3 + 8959410*x**4 + 6141096*x**5 - &
+								21493836*x**6 - 4251528*x**7 + 14348907*x**8))/81920.0d0
+			ELSEIF (INDX.EQ.4) THEN
+				REF1D = (-81.0d0*(11025 + 36488*x - 492588*x**2 - 310104*x**3 + 3488670*x**4 + 717336*x**5 - &
+								7532028*x**6 - 472392*x**7 + 4782969*x**8))/163840.0d0
+			ELSEIF (INDX.EQ.5) THEN
+				REF1D = (81.0d0*(11025 - 36488*x - 492588*x**2 + 310104*x**3 + 3488670*x**4 - 717336*x**5 - &
+								7532028*x**6 + 472392*x**7 + 4782969*x**8))/163840.0d0
+			ELSEIF (INDX.EQ.6) THEN
+				REF1D = (-9*(3675 - 212888*x - 957996*x**2 + 2389176*x**3 + 8959410*x**4 - 6141096*x**5 - &
+								21493836*x**6 + 4251528*x**7 + 14348907*x**8))/81920.0d0
+			ELSEIF (INDX.EQ.7) THEN
+				REF1D = (81.0d0*(441 - 45400*x - 122580*x**2 + 950040*x**3 + 2137590*x**4 - 3061800*x**5 - &
+								6429780*x**6 + 2361960*x**7 + 4782969*x**8))/573440.0d0
+			ELSEIF (INDX.EQ.8) THEN
+				REF1D = (-81.0d0*(225 - 32984*x - 63612*x**2 + 779688*x**3 + 1253070*x**4 - 3551688*x**5 - &
+								5327532*x**6 + 3306744*x**7 + 4782969*x**8))/(2.293760d0*10.0d0**6)
+			ELSEIF (INDX.EQ.9) THEN
+				REF1D = (1225 - 232488*x - 348732*x**2 + 5756184*x**3 + 7195230*x**4 - 29760696*x**5 - &
+								34720812*x**6 + 38263752*x**7 + 43046721*x**8)/(2.293760d0*10.0d0**6)
+			ENDIF
+		ELSEIF (DIFF.EQ.2) THEN
+			IF (INDX.EQ.0) THEN
+				REF1D = (-9*(3229 - 9687*x - 239841*x**2 + 399735*x**3 + 2066715*x**4 - 2893401*x**5 - &
+								3720087*x**6 + 4782969*x**7))/286720.0d0
+			ELSEIF (INDX.EQ.1) THEN
+				REF1D = (81.0d0*(4123 - 15903*x - 292383*x**2 + 626535*x**3 + 2219805*x**4 - &
+								3995649*x**5 - 2893401*x**6 + 4782969*x**7))/286720.0d0
+			ELSEIF (INDX.EQ.2) THEN
+				REF1D = (-81.0d0*(5675 - 30645*x - 356265*x**2 + 1068795*x**3 + 1913625*x**4 - &
+								4822335*x**5 - 2066715*x**6 + 4782969*x**7))/71680.0d0
+			ELSEIF (INDX.EQ.3) THEN
+				REF1D = (9*(26611 - 239499*x - 895941*x**2 + 4479705*x**3 + 3838185*x**4 - &
+								16120377*x**5 - 3720087*x**6 + 14348907*x**7))/10240.0d0
+			ELSEIF (INDX.EQ.4) THEN
+				REF1D = (-81.0d0*(4561 - 123147*x - 116289*x**2 + 1744335*x**3 + 448335*x**4 - &
+								5649021*x**5 - 413343*x**6 + 4782969*x**7))/20480.0d0
+			ELSEIF (INDX.EQ.5) THEN
+				REF1D = (81.0d0*(-4561 - 123147*x + 116289*x**2 + 1744335*x**3 - 448335*x**4 - &
+								5649021*x**5 + 413343*x**6 + 4782969*x**7))/20480.0d0
+			ELSEIF (INDX.EQ.6) THEN
+				REF1D = (-9*(-26611 - 239499*x + 895941*x**2 + 4479705*x**3 - 3838185*x**4 - &
+								16120377*x**5 + 3720087*x**6 + 14348907*x**7))/10240.0d0
+			ELSEIF (INDX.EQ.7) THEN
+				REF1D = (81.0d0*(-5675 - 30645*x + 356265*x**2 + 1068795*x**3 - 1913625*x**4 - &
+								4822335*x**5 + 2066715*x**6 + 4782969*x**7))/71680.0d0
+			ELSEIF (INDX.EQ.8) THEN
+				REF1D = (-81.0d0*(-4123 - 15903*x + 292383*x**2 + 626535*x**3 - 2219805*x**4 - &
+								3995649*x**5 + 2893401*x**6 + 4782969*x**7))/286720.0d0
+			ELSEIF (INDX.EQ.9) THEN
+				REF1D = (9*(-3229 - 9687*x + 239841*x**2 + 399735*x**3 - 2066715*x**4 - 2893401*x**5 + &
+								3720087*x**6 + 4782969*x**7))/286720.0d0
+			ENDIF
+		ENDIF
+	ELSEIF(IORDER.EQ.10)THEN
+		IF(DIFF.EQ.0)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=((-1+X)*X*(-4+5*X)*(-3+5*X)*(-2+5*X)*(-1+5*X)*(1+5*X)&
+				*(2+5*X)*(3+5*X)*(4+5*X))/145152.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(-25*(-1+X)*X*(1+X)*(-4+5*X)*(-3+5*X)*(-2+5*X)*(-1+5*X)&
+				*(1+5*X)*(2+5*X)*(3+5*X))/72576.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(25*(-1+X)*X*(1+X)*(-4+5*X)*(-3+5*X)*(-2+5*X)*(-1+5*X)&
+				*(1+5*X)*(2+5*X)*(4+5*X))/16128.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(-25*(-1+X)*X*(1+X)*(-4+5*X)*(-3+5*X)*(-2+5*X)*(-1+5*X)&
+				*(1+5*X)*(3+5*X)*(4+5*X))/6048.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(25*(-1+X)*X*(1+X)*(-4+5*X)*(-3+5*X)*(-2+5*X)*(-1+5*X)&
+				*(2+5*X)*(3+5*X)*(4+5*X))/3456.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=-((-1+X)*(1+X)*(-4+5*X)*(-3+5*X)*(-2+5*X)*(-1+5*X)*(1+5*X)&
+				*(2+5*X)*(3+5*X)*(4+5*X))/576.0D0
+			ELSEIF(INDX.EQ.6)THEN
+				REF1D=(25*(-1+X)*X*(1+X)*(-4+5*X)*(-3+5*X)*(-2+5*X)*(1+5*X)&
+				*(2+5*X)*(3+5*X)*(4+5*X))/3456.0D0
+			ELSEIF(INDX.EQ.7)THEN
+				REF1D=(-25*(-1+X)*X*(1+X)*(-4+5*X)*(-3+5*X)*(-1+5*X)*(1+5*X)&
+				*(2+5*X)*(3+5*X)*(4+5*X))/6048.0D0
+			ELSEIF(INDX.EQ.8)THEN
+				REF1D=(25*(-1+X)*X*(1+X)*(-4+5*X)*(-2+5*X)*(-1+5*X)*(1+5*X)&
+				*(2+5*X)*(3+5*X)*(4+5*X))/16128.0D0
+			ELSEIF(INDX.EQ.9)THEN
+				REF1D=(-25*(-1+X)*X*(1+X)*(-3+5*X)*(-2+5*X)*(-1+5*X)*(1+5*X)&
+				*(2+5*X)*(3+5*X)*(4+5*X))/72576.0D0
+			ELSEIF(INDX.EQ.10)THEN
+				REF1D=(X*(1+X)*(-4+5*X)*(-3+5*X)*(-2+5*X)*(-1+5*X)*(1+5*X)&
+				*(2+5*X)*(3+5*X)*(4+5*X))/145152.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.1)THEN
+			IF(INDX.EQ.0)THEN
+				REF1D=(-576+1152*X+61500*X**2-82000*X**3-853125*X**4+1023750*X**5 &
+				+3281250*X**6-3750000*X**7-3515625*X**8+3906250*X**9)/145152.0D0
+			ELSEIF(INDX.EQ.1)THEN
+				REF1D=(-25*(-72+180*X+7566*X**2-12610*X**3-99750*X**4+149625*X**5&
+				+341250*X**6-487500*X**7-281250*X**8+390625*X**9))/36288.0D0
+			ELSEIF(INDX.EQ.2)THEN
+				REF1D=(25*(-192+640*X+19476*X**2-43280*X**3-228375*X**4+456750*X**5&
+				+603750*X**6-1150000*X**7-421875*X**8+781250*X**9))/16128.0D0
+			ELSEIF(INDX.EQ.3)THEN
+				REF1D=(-25*(-144+720*X+13107*X**2-43690*X**3-102375*X**4+307125*X**5&
+				+223125*X**6-637500*X**7-140625*X**8+390625*X**9))/3024.0D0
+			ELSEIF(INDX.EQ.4)THEN
+				REF1D=(25*(-576+5760*X+20028*X**2-133520*X**3-121125*X**4+726750*X**5&
+				+236250*X**6-1350000*X**7 &
+				-140625*X**8+781250*X**9))/3456.0D0
+			ELSEIF(INDX.EQ.5)THEN
+				REF1D=(-21076*X+382250*X**3-1918125*X**5+3437500*X**7-1953125*X**9)/288.0D0
+			ELSEIF(INDX.EQ.6)THEN
+				REF1D=(25*(576+5760*X-20028*X**2-133520*X**3+121125*X**4+726750*X**5&
+				-236250*X**6-1350000*X**7 &
+				+140625*X**8+781250*X**9))/3456.0D0
+			ELSEIF(INDX.EQ.7)THEN
+				REF1D=(-25*(144+720*X-13107*X**2-43690*X**3+102375*X**4+307125*X**5&
+				-223125*X**6-637500*X**7 &
+				+140625*X**8+390625*X**9))/3024.0D0
+			ELSEIF(INDX.EQ.8)THEN
+				REF1D=(25*(192+640*X-19476*X**2-43280*X**3+228375*X**4+456750*X**5&
+				-603750*X**6-1150000*X**7 &
+				+421875*X**8+781250*X**9))/16128.0D0
+			ELSEIF(INDX.EQ.9)THEN
+				REF1D=(-25*(72+180*X-7566*X**2-12610*X**3+99750*X**4+149625*X**5&
+				-341250*X**6-487500*X**7 &
+				+281250*X**8+390625*X**9))/36288.0D0
+			ELSEIF(INDX.EQ.10)THEN
+				REF1D=(576+1152*X-61500*X**2-82000*X**3+853125*X**4+1023750*X**5&
+				-3281250*X**6-3750000*X**7 &
+				+3515625*X**8+3906250*X**9)/145152.0D0
+			ENDIF
+		ELSEIF(DIFF.EQ.2) THEN
+			IF(INDX.EQ.0) THEN
+				REF1D = (192.D0 + 20500*X - 41000*X**2 - 568750*X**3 + 853125*X**4 + 3281250*X**5 - &
+									4375000*X**6 - 4687500*X**7 + 5859375*X**8)/24192.D0
+			ELSEIF(INDX.EQ.1) THEN
+				REF1D = (-25.D0*(60.D0 + 5044*X - 12610*X**2 - 133000*X**3 + 249375*X**4 + 682500*X**5 - &
+									1137500*X**6 - 750000*X**7 + 1171875*X**8))/12096.D0
+			ELSEIF(INDX.EQ.2) THEN
+				REF1D = (25.D0*(320.D0 + 19476*X - 64920*X**2 - 456750*X**3 + 1141875*X**4 + 1811250*X**5 - &
+									4025000*X**6 - 1687500*X**7 + 3515625*X**8))/8064.D0
+			ELSEIF(INDX.EQ.3) THEN
+				REF1D = (-25.D0*(240.D0 + 8738*X - 43690*X**2 - 136500*X**3 + 511875*X**4 + 446250*X**5 - &
+									1487500*X**6 - 375000*X**7 + 1171875*X**8))/1008.D0
+			ELSEIF(INDX.EQ.4) THEN
+				REF1D = (25.D0*(960.D0 + 6676*X - 66760*X**2 - 80750*X**3 + 605625*X**4 + 236250*X**5 - &
+									1575000*X**6 - 187500*X**7 + 1171875*X**8))/576.D0
+			ELSEIF(INDX.EQ.5) THEN
+				REF1D = (-21076.D0 + 1146750*X**2 - 9590625*X**4 + 24062500*X**6 - 17578125*X**8)/288.D0
+			ELSEIF(INDX.EQ.6) THEN
+				REF1D = (25.D0*(960.D0 - 6676*X - 66760*X**2 + 80750*X**3 + 605625*X**4 - 236250*X**5 - &
+									1575000*X**6 + 187500*X**7 + 1171875*X**8))/576.D0
+			ELSEIF(INDX.EQ.7) THEN
+				REF1D = (-25.D0*(240.D0 - 8738*X - 43690*X**2 + 136500*X**3 + 511875*X**4 - 446250*X**5 - &
+									1487500*X**6 + 375000*X**7 + 1171875*X**8))/1008.D0
+			ELSEIF(INDX.EQ.8) THEN
+				REF1D = (25.D0*(320.D0 - 19476*X - 64920*X**2 + 456750*X**3 + 1141875*X**4 - 1811250*X**5 - &
+									4025000*X**6 + 1687500*X**7 + 3515625*X**8))/8064.D0
+			ELSEIF(INDX.EQ.9) THEN
+				REF1D = (-25.D0*(60.D0 - 5044*X - 12610*X**2 + 133000*X**3 + 249375*X**4 - 682500*X**5 - &
+									1137500*X**6 + 750000*X**7 + 1171875*X**8))/12096.D0
+			ELSEIF(INDX.EQ.10) THEN
+				REF1D = (192.D0 - 20500*X - 41000*X**2 + 568750*X**3 + 853125*X**4 - 3281250*X**5 - &
+									4375000*X**6 + 4687500*X**7 + 5859375*X**8)/24192.D0
+			ENDIF
+		ENDIF
+	ELSEIF (IORDER.EQ.11) THEN
+		IF (DIFF.EQ.0) THEN
+			IF (INDX.EQ.0) THEN
+				REF1D = -((-1 + x)*(-9 + 11*x)*(-7 + 11*x)*(-5 + 11*x)*(-3 + 11*x)*(-1 + 11*x)*(1 + 11*x)* &
+								(3 + 11*x)*(5 + 11*x)*(7 + 11*x)*(9 + 11*x))/(7.43178240d0*10.0d0**9)
+			ELSEIF (INDX.EQ.1) THEN
+				REF1D = (121.0d0*(-1 + x)*(1 + x)*(-9 + 11*x)*(-7 + 11*x)*(-5 + 11*x)*(-3 + 11*x)*(-1 + 11*x)* &
+								(1 + 11*x)*(3 + 11*x)*(5 + 11*x)*(7 + 11*x))/(7.43178240d0*10.0d0**9)
+			ELSEIF (INDX.EQ.2) THEN
+				REF1D = (-121.0d0*(-1 + x)*(1 + x)*(-9 + 11*x)*(-7 + 11*x)*(-5 + 11*x)*(-3 + 11*x)*(-1 + 11*x)* &
+								(1 + 11*x)*(3 + 11*x)*(5 + 11*x)*(9 + 11*x))/(1.486356480d0*10.0d0**9)
+			ELSEIF (INDX.EQ.3) THEN
+				REF1D = (121.0d0*(-1 + x)*(1 + x)*(-9 + 11*x)*(-7 + 11*x)*(-5 + 11*x)*(-3 + 11*x)*(-1 + 11*x)* &
+								(1 + 11*x)*(3 + 11*x)*(7 + 11*x)*(9 + 11*x))/(4.95452160d0*10.0d0**8)
+			ELSEIF (INDX.EQ.4) THEN
+				REF1D = (-121.0d0*(-1 + x)*(1 + x)*(-9 + 11*x)*(-7 + 11*x)*(-5 + 11*x)*(-3 + 11*x)*(-1 + 11*x)* &
+								(1 + 11*x)*(5 + 11*x)*(7 + 11*x)*(9 + 11*x))/(2.47726080d0*10.0d0**8)
+			ELSEIF (INDX.EQ.5) THEN
+				REF1D = (121.0d0*(-1 + x)*(1 + x)*(-9 + 11*x)*(-7 + 11*x)*(-5 + 11*x)*(-3 + 11*x)*(-1 + 11*x)* &
+								(3 + 11*x)*(5 + 11*x)*(7 + 11*x)*(9 + 11*x))/(1.7694720d0*10.0d0**8)
+			ELSEIF (INDX.EQ.6) THEN
+				REF1D = (-121.0d0*(-1 + x)*(1 + x)*(-9 + 11*x)*(-7 + 11*x)*(-5 + 11*x)*(-3 + 11*x)*(1 + 11*x)* &
+								(3 + 11*x)*(5 + 11*x)*(7 + 11*x)*(9 + 11*x))/(1.7694720d0*10.0d0**8)
+			ELSEIF (INDX.EQ.7) THEN
+				REF1D = (121.0d0*(-1 + x)*(1 + x)*(-9 + 11*x)*(-7 + 11*x)*(-5 + 11*x)*(-1 + 11*x)*(1 + 11*x)* &
+								(3 + 11*x)*(5 + 11*x)*(7 + 11*x)*(9 + 11*x))/(2.47726080d0*10.0d0**8)
+			ELSEIF (INDX.EQ.8) THEN
+				REF1D = (-121.0d0*(-1 + x)*(1 + x)*(-9 + 11*x)*(-7 + 11*x)*(-3 + 11*x)*(-1 + 11*x)*(1 + 11*x)* &
+								(3 + 11*x)*(5 + 11*x)*(7 + 11*x)*(9 + 11*x))/(4.95452160d0*10.0d0**8)
+			ELSEIF (INDX.EQ.9) THEN
+				REF1D = (121.0d0*(-1 + x)*(1 + x)*(-9 + 11*x)*(-5 + 11*x)*(-3 + 11*x)*(-1 + 11*x)*(1 + 11*x)* &
+								(3 + 11*x)*(5 + 11*x)*(7 + 11*x)*(9 + 11*x))/(1.486356480d0*10.0d0**9)
+			ELSEIF (INDX.EQ.10) THEN
+				REF1D = (-121.0d0*(-1 + x)*(1 + x)*(-7 + 11*x)*(-5 + 11*x)*(-3 + 11*x)*(-1 + 11*x)*(1 + 11*x)* &
+								(3 + 11*x)*(5 + 11*x)*(7 + 11*x)*(9 + 11*x))/(7.43178240d0*10.0d0**9)
+			ELSEIF (INDX.EQ.11) THEN
+				REF1D = ((1 + x)*(-9 + 11*x)*(-7 + 11*x)*(-5 + 11*x)*(-3 + 11*x)*(-1 + 11*x)*(1 + 11*x)*(3 + 11*x)* &
+								(5 + 11*x)*(7 + 11*x)*(9 + 11*x))/(7.43178240d0*10.0d0**9)
+			ENDIF
+		ELSEIF (DIFF.EQ.1) THEN
+			IF (INDX.EQ.0) THEN
+				REF1D = (893025.0d0 + 255847482.0d0*x - 383771223.0d0*x**2 - 10120444840.0d0*x**3 + &
+12650556050.0d0*x**4 + 93304574748.0d0*x**5 - &
+								108855337206.0d0*x**6 - 282953722920.0d0*x**7 + 318322938285.0d0*x**8 + 259374246010.0d0*x**9 - &
+								285311670611.0d0*x**10)/(7.43178240d0*10.0d0**9)
+			ELSEIF (INDX.EQ.1) THEN
+				REF1D = (121.0d0*(-121275.0d0 - 28329498.0d0*x + 51937413.0d0*x**2 + 1096710120.0d0*x**3 - &
+1675529350.0d0*x**4 - 9596472732.0d0*x**5 + &
+								13683859266.0d0*x**6 + 26148240360.0d0*x**7 - 35953830495.0d0*x**8 - 19292299290.0d0*x**9 + &
+								25937424601.0d0*x**10))/(7.43178240d0*10.0d0**9)
+			ELSEIF (INDX.EQ.2) THEN
+				REF1D = (-121.0d0*(-200475 - 36174726.0d0*x + 85268997.0d0*x**2 + 1340218264.0d0*x**3 - &
+2632571590.0d0*x**4 - 10533613860.0d0*x**5 + &
+								19311625410.0d0*x**6 + 23512157592.0d0*x**7 - 41566135743.0d0*x**8 - 15005121670.0d0*x**9 + &
+								25937424601.0d0*x**10))/(1.486356480d0*10.0d0**9)
+			ELSEIF (INDX.EQ.3) THEN
+				REF1D = (121.0d0*(-392931.0d0 - 49797810.0d0*x + 164332773.0d0*x**2 + 1644385160.0d0*x**3 - &
+4522059190.0d0*x**4 - 9758812140.0d0*x**5 + &
+								25047617826.0d0*x**6 + 18495096840.0d0*x**7 - 45775364679.0d0*x**8 - 10717944050.0d0*x**9 + &
+								25937424601.0d0*x**10))/(4.95452160d0*10.0d0**8)
+			ELSEIF (INDX.EQ.4) THEN
+				REF1D = (-121.0d0*(-1091475.0d0 - 77873694.0d0*x + 428305317.0d0*x**2 + 1450109496.0d0*x**3 - &
+6646335190.0d0*x**4 - 6917872500.0d0*x**5 + &
+								29593121250.0d0*x**6 + 11777337528.0d0*x**7 - 48581517303.0d0*x**8 - 6430766430.0d0*x**9 + &
+								25937424601.0d0*x**10))/(2.47726080d0*10.0d0**8)
+			ELSEIF (INDX.EQ.5) THEN
+				REF1D = (121.0d0*(-9823275.0d0 - 41521482.0d0*x + 685104453.0d0*x**2 + 583941160.0d0*x**3 - &
+8029190950.0d0*x**4 - 2499921468.0d0*x**5 + &
+								32082325506.0d0*x**6 + 4039159080.0d0*x**7 - 49984593615.0d0*x**8 - 2143588810.0d0*x**9 + &
+								25937424601.0d0*x**10))/(1.7694720d0*10.0d0**8)
+			ELSEIF (INDX.EQ.6) THEN
+				REF1D = (-121.0d0*(-9823275.0d0 + 41521482.0d0*x + 685104453.0d0*x**2 - 583941160.0d0*x**3 - &
+8029190950.0d0*x**4 + 2499921468.0d0*x**5 + &
+								32082325506.0d0*x**6 - 4039159080.0d0*x**7 - 49984593615.0d0*x**8 + 2143588810.0d0*x**9 + &
+								25937424601.0d0*x**10))/(1.7694720d0*10.0d0**8)
+			ELSEIF (INDX.EQ.7) THEN
+				REF1D = (121.0d0*(-1091475.0d0 + 77873694.0d0*x + 428305317.0d0*x**2 - 1450109496.0d0*x**3 - &
+6646335190.0d0*x**4 + 6917872500.0d0*x**5 + &
+								29593121250.0d0*x**6 - 11777337528.0d0*x**7 - 48581517303.0d0*x**8 + 6430766430.0d0*x**9 + &
+								25937424601.0d0*x**10))/(2.47726080d0*10.0d0**8)
+			ELSEIF (INDX.EQ.8) THEN
+				REF1D = (-121.0d0*(-392931 + 49797810.0d0*x + 164332773.0d0*x**2 - 1644385160.0d0*x**3 - &
+4522059190.0d0*x**4 + 9758812140.0d0*x**5 + &
+								25047617826.0d0*x**6 - 18495096840.0d0*x**7 - 45775364679.0d0*x**8 + 10717944050.0d0*x**9 + &
+								25937424601.0d0*x**10))/(4.95452160d0*10.0d0**8)
+			ELSEIF (INDX.EQ.9) THEN
+				REF1D = (121.0d0*(-200475 + 36174726.0d0*x + 85268997.0d0*x**2 - 1340218264.0d0*x**3 - &
+2632571590.0d0*x**4 + 10533613860.0d0*x**5 + &
+								19311625410.0d0*x**6 - 23512157592.0d0*x**7 - 41566135743.0d0*x**8 + 15005121670.0d0*x**9 + &
+								25937424601.0d0*x**10))/(1.486356480d0*10.0d0**9)
+			ELSEIF (INDX.EQ.10) THEN
+				REF1D = (-121.0d0*(-121275.0d0 + 28329498.0d0*x + 51937413.0d0*x**2 - 1096710120.0d0*x**3 - &
+1675529350.0d0*x**4 + 9596472732.0d0*x**5 + &
+								13683859266.0d0*x**6 - 26148240360.0d0*x**7 - 35953830495.0d0*x**8 + 19292299290.0d0*x**9 + &
+								25937424601.0d0*x**10))/(7.43178240d0*10.0d0**9)
+			ELSEIF (INDX.EQ.11) THEN
+				REF1D = (-893025.0d0 + 255847482.0d0*x + 383771223.0d0*x**2 - 10120444840.0d0*x**3 - &
+12650556050.0d0*x**4 + 93304574748.0d0*x**5 + &
+								108855337206.0d0*x**6 - 282953722920.0d0*x**7 - 318322938285.0d0*x**8 + 259374246010.0d0*x**9 + &
+								285311670611.0d0*x**10)/(7.43178240d0*10.0d0**9)
+			ENDIF
+		ELSEIF (DIFF.EQ.2) THEN
+			IF (INDX.EQ.0) THEN
+				REF1D = (-1331.0d0*(-96111.0d0 + 288333.0d0*x + 11405460.0d0*x**2 - 19009100.0d0*x**3 - &
+175252770.0d0*x**4 + 245353878.0d0*x**5 + &
+								744055620.0d0*x**6 - 956642940.0d0*x**7 - 876922695.0d0*x**8 + 1071794405.0d0*x**9))/(3.71589120d0*10.0d0**9)
+			ELSEIF (INDX.EQ.1) THEN
+				REF1D = (121.0d0*(-14164749.0d0 + 51937413.0d0*x + 1645065180.0d0*x**2 - 3351058700.0d0*x**3 - &
+23991181830.0d0*x**4 + 41051577798.0d0*x**5 + &
+								91518841260.0d0*x**6 - 143815321980.0d0*x**7 - 86815346805.0d0*x**8 + &
+129687123005.0d0*x**9))/(3.71589120d0*10.0d0**9)
+			ELSEIF (INDX.EQ.2) THEN
+				REF1D = (-121.0d0*(-18087363.0d0 + 85268997.0d0*x + 2010327396.0d0*x**2 - 5265143180.0d0*x**3 - &
+26334034650.0d0*x**4 + 57934876230.0d0*x**5 + &
+								82292551572.0d0*x**6 - 166264542972.0d0*x**7 - 67523047515.0d0*x**8 + &
+129687123005.0d0*x**9))/(7.43178240d0*10.0d0**8)
+			ELSEIF (INDX.EQ.3) THEN
+				REF1D = (121.0d0*(-24898905.0d0 + 164332773.0d0*x + 2466577740.0d0*x**2 - 9044118380.0d0*x**3 - &
+24397030350.0d0*x**4 + 75142853478.0d0*x**5 + &
+								64732838940.0d0*x**6 - 183101458716.0d0*x**7 - 48230748225.0d0*x**8 + &
+129687123005.0d0*x**9))/(2.47726080d0*10.0d0**8)
+			ELSEIF (INDX.EQ.4) THEN
+				REF1D = (-121.0d0*(-38936847.0d0 + 428305317.0d0*x + 2175164244.0d0*x**2 - 13292670380.0d0*x**3 - &
+17294681250.0d0*x**4 + 88779363750.0d0*x**5 + &
+								41220681348.0d0*x**6 - 194326069212.0d0*x**7 - 28938448935.0d0*x**8 + &
+129687123005.0d0*x**9))/(1.23863040d0*10.0d0**8)
+			ELSEIF (INDX.EQ.5) THEN
+				REF1D = (121.0d0*(-20760741.0d0 + 685104453.0d0*x + 875911740.0d0*x**2 - 16058381900.0d0*x**3 - &
+6249803670.0d0*x**4 + 96246976518.0d0*x**5 + &
+								14137056780.0d0*x**6 - 199938374460.0d0*x**7 - 9646149645.0d0*x**8 + &
+129687123005.0d0*x**9))/(8.847360d0*10.0d0**7)
+			ELSEIF (INDX.EQ.6) THEN
+				REF1D = (-121.0d0*(20760741.0d0 + 685104453.0d0*x - 875911740.0d0*x**2 - 16058381900.0d0*x**3 + &
+6249803670.0d0*x**4 + 96246976518.0d0*x**5 - &
+								14137056780.0d0*x**6 - 199938374460.0d0*x**7 + 9646149645.0d0*x**8 + &
+129687123005.0d0*x**9))/(8.847360d0*10.0d0**7)
+			ELSEIF (INDX.EQ.7) THEN
+				REF1D = (121.0d0*(38936847.0d0 + 428305317.0d0*x - 2175164244.0d0*x**2 - 13292670380.0d0*x**3 + &
+17294681250.0d0*x**4 + 88779363750.0d0*x**5 - &
+								41220681348.0d0*x**6 - 194326069212.0d0*x**7 + 28938448935.0d0*x**8 + &
+129687123005.0d0*x**9))/(1.23863040d0*10.0d0**8)
+			ELSEIF (INDX.EQ.8) THEN
+				REF1D = (-121.0d0*(24898905 + 164332773.0d0*x - 2466577740.0d0*x**2 - 9044118380.0d0*x**3 + &
+24397030350.0d0*x**4 + 75142853478.0d0*x**5 - &
+								64732838940.0d0*x**6 - 183101458716.0d0*x**7 + 48230748225.0d0*x**8 + &
+129687123005.0d0*x**9))/(2.47726080d0*10.0d0**8)
+			ELSEIF (INDX.EQ.9) THEN
+				REF1D = (121.0d0*(18087363.0d0 + 85268997.0d0*x - 2010327396.0d0*x**2 - 5265143180.0d0*x**3 + &
+26334034650.0d0*x**4 + 57934876230.0d0*x**5 - &
+								82292551572.0d0*x**6 - 166264542972.0d0*x**7 + 67523047515.0d0*x**8 + &
+129687123005.0d0*x**9))/(7.43178240d0*10.0d0**8)
+			ELSEIF (INDX.EQ.10) THEN
+				REF1D = (-121.0d0*(14164749.0d0 + 51937413.0d0*x - 1645065180.0d0*x**2 - 3351058700.0d0*x**3 + &
+23991181830.0d0*x**4 + 41051577798.0d0*x**5 - &
+								91518841260.0d0*x**6 - 143815321980.0d0*x**7 + 86815346805.0d0*x**8 + &
+129687123005.0d0*x**9))/(3.71589120d0*10.0d0**9)
+			ELSEIF (INDX.EQ.11) THEN
+				REF1D = (1331.0d0*(96111 + 288333.0d0*x - 11405460.0d0*x**2 - 19009100.0d0*x**3 + &
+175252770.0d0*x**4 + 245353878.0d0*x**5 - 744055620.0d0*x**6 - &
+								956642940.0d0*x**7 + 876922695.0d0*x**8 + &
+1071794405.0d0*x**9))/(3.71589120d0*10.0d0**9)
+			ENDIF
+		ENDIF
+	ELSEIF (IORDER.EQ.12) THEN
+		IF (DIFF.EQ.0) THEN
+			IF (INDX.EQ.0) THEN
+				REF1D = ((-1.0d0 + X)*X*(-1.0d0 + 2*X)*(1.0d0 + 2*X)*(-2 + 3*X)*(-1.0d0 + 3*X)*(1.0d0 + 3*X)*&
+									(2 + 3*X)*(-5 + 6*X)*(-1.0d0 + 6*X)*(1.0d0 + 6*X)*(5 + 6*X))/92400.D0
+			ELSEIF (INDX.EQ.1) THEN
+				REF1D = (-3*(-1.0d0 + X)*X*(1.0d0 + X)*(-1.0d0 + 2*X)*(1.0d0 + 2*X)*(-2 + 3*X)*(-1.0d0 + 3*X)*&
+									(1.0d0 + 3*X)*(2 + 3*X)*(-5 + 6*X)*(-1.0d0 + 6*X)*(1.0d0 + 6*X))/3850.D0
+			ELSEIF (INDX.EQ.2) THEN
+				REF1D = (3*(-1.0d0 + X)*X*(1.0d0 + X)*(-1.0d0 + 2*X)*(1.0d0 + 2*X)*(-2 + 3*X)*(-1.0d0 + 3*X)*&
+									(1.0d0 + 3*X)*(-5 + 6*X)*(-1.0d0 + 6*X)*(1.0d0 + 6*X)*(5 + 6*X))/1400.D0
+			ELSEIF (INDX.EQ.3) THEN
+				REF1D = -((-1.0d0 + X)*X*(1.0d0 + X)*(-1.0d0 + 2*X)*(-2 + 3*X)*(-1.0d0 + 3*X)*(1.0d0 + 3*X)*&
+									(2 + 3*X)*(-5 + 6*X)*(-1.0d0 + 6*X)*(1.0d0 + 6*X)*(5 + 6*X))/210.D0
+			ELSEIF (INDX.EQ.4) THEN
+				REF1D = (9*(-1.0d0 + X)*X*(1.0d0 + X)*(-1.0d0 + 2*X)*(1.0d0 + 2*X)*(-2 + 3*X)*(-1.0d0 + 3*X)*&
+									(2 + 3*X)*(-5 + 6*X)*(-1.0d0 + 6*X)*(1.0d0 + 6*X)*(5 + 6*X))/560.D0
+			ELSEIF (INDX.EQ.5) THEN
+				REF1D = (-9*(-1.0d0 + X)*X*(1.0d0 + X)*(-1.0d0 + 2*X)*(1.0d0 + 2*X)*(-2 + 3*X)*(-1.0d0 + 3*X)*&
+									(1.0d0 + 3*X)*(2 + 3*X)*(-5 + 6*X)*(-1.0d0 + 6*X)*(5 + 6*X))/175.D0
+			ELSEIF (INDX.EQ.6) THEN
+				REF1D = ((-1.0d0 + X)*(1.0d0 + X)*(-1.0d0 + 2*X)*(1.0d0 + 2*X)*(-2 + 3*X)*(-1.0d0 + 3*X)*(1.0d0 + 3*X)*&
+									(2 + 3*X)*(-5 + 6*X)*(-1.0d0 + 6*X)*(1.0d0 + 6*X)*(5 + 6*X))/100.D0
+			ELSEIF (INDX.EQ.7) THEN
+				REF1D = (-9*(-1.0d0 + X)*X*(1.0d0 + X)*(-1.0d0 + 2*X)*(1.0d0 + 2*X)*(-2 + 3*X)*(-1.0d0 + 3*X)*&
+									(1.0d0 + 3*X)*(2 + 3*X)*(-5 + 6*X)*(1.0d0 + 6*X)*(5 + 6*X))/175.D0
+			ELSEIF (INDX.EQ.8) THEN
+				REF1D = (9*(-1.0d0 + X)*X*(1.0d0 + X)*(-1.0d0 + 2*X)*(1.0d0 + 2*X)*(-2 + 3*X)*(1.0d0 + 3*X)*&
+									(2 + 3*X)*(-5 + 6*X)*(-1.0d0 + 6*X)*(1.0d0 + 6*X)*(5 + 6*X))/560.D0
+			ELSEIF (INDX.EQ.9) THEN
+				REF1D = -((-1.0d0 + X)*X*(1.0d0 + X)*(1.0d0 + 2*X)*(-2 + 3*X)*(-1.0d0 + 3*X)*(1.0d0 + 3*X)*&
+									(2 + 3*X)*(-5 + 6*X)*(-1.0d0 + 6*X)*(1.0d0 + 6*X)*(5 + 6*X))/210.D0
+			ELSEIF (INDX.EQ.10) THEN
+				REF1D = (3*(-1.0d0 + X)*X*(1.0d0 + X)*(-1.0d0 + 2*X)*(1.0d0 + 2*X)*(-1.0d0 + 3*X)*(1.0d0 + 3*X)*&
+									(2 + 3*X)*(-5 + 6*X)*(-1.0d0 + 6*X)*(1.0d0 + 6*X)*(5 + 6*X))/1400.D0
+			ELSEIF (INDX.EQ.11) THEN
+				REF1D = (-3*(-1.0d0 + X)*X*(1.0d0 + X)*(-1.0d0 + 2*X)*(1.0d0 + 2*X)*(-2 + 3*X)*(-1.0d0 + 3*X)*&
+									(1.0d0 + 3*X)*(2 + 3*X)*(-1.0d0 + 6*X)*(1.0d0 + 6*X)*(5 + 6*X))/3850.D0
+			ELSEIF (INDX.EQ.12) THEN
+				REF1D = (X*(1.0d0 + X)*(-1.0d0 + 2*X)*(1.0d0 + 2*X)*(-2 + 3*X)*(-1.0d0 + 3*X)*(1.0d0 + 3*X)*&
+									(2 + 3*X)*(-5 + 6*X)*(-1.0d0 + 6*X)*(1.0d0 + 6*X)*(5 + 6*X))/92400.D0
+			ENDIF
+		ELSEIF (DIFF.EQ.1) THEN
+			IF (INDX.EQ.0) THEN
+				REF1D = (100.D0 - 200*X - 15807*X**2 + 21076*X**3 + 344025*X**4 - 412830*X**5 - 2320164*X**6 + &
+									2651616*X**7 + 5773680*X**8 - 6415200*X**9 - 4618944*X**10 + 5038848*X**11)/92400.D0
+			ELSEIF (INDX.EQ.1) THEN
+				REF1D = (-3.D0*(20.D0 - 48*X - 3135*X**2 + 5016*X**3 + 66550*X**4 - 95832*X**5 - 426195*X**6 + &
+									584496*X**7 + 962280*X**8 - 1283040*X**9 - 641520*X**10 + 839808*X**11))/3850.D0
+			ELSEIF (INDX.EQ.2) THEN
+				REF1D = (3.D0*(25.D0 - 75*X - 3858*X**2 + 7716*X**3 + 78125*X**4 - 140625*X**5 - 454356*X**6 + &
+									778896*X**7 + 874800*X**8 - 1458000*X**9 - 513216*X**10 + 839808*X**11))/700.D0
+			ELSEIF (INDX.EQ.3) THEN
+				REF1D = (-100.D0 + 400*X + 14907*X**2 - 39752*X**3 - 270990*X**4 + 650376*X**5 + 1284255*X**6 - &
+									2935440*X**7 - 2152008*X**8 + 4782240*X**9 + 1154736*X**10 - 2519424*X**11)/210.D0
+			ELSEIF (INDX.EQ.4) THEN
+				REF1D = (9.D0*(100.D0 - 600*X - 13407*X**2 + 53628*X**3 + 169265*X**4 - 609354*X**5 - 669060*X**6 + &
+									2293920*X**7 + 1014768*X**8 - 3382560*X**9 - 513216*X**10 + 1679616*X**11))/560.D0
+			ELSEIF (INDX.EQ.5) THEN
+				REF1D = (-9.D0*(100.D0 - 1200*X - 5307*X**2 + 42456*X**3 + 51950*X**4 - 374040*X**5 - 183519*X**6 + &
+									1258416*X**7 + 262440*X**8 - 1749600*X**9 - 128304*X**10 + 839808*X**11))/175.D0
+			ELSEIF (INDX.EQ.6) THEN
+				REF1D = (X*(-5369.D0 + 148148*X**2 - 1200771*X**4 + 3891888*X**6 - 5307120*X**8 + 2519424*X**10))/50.D0
+			ELSEIF (INDX.EQ.7) THEN
+				REF1D = (-9.D0*(-100.D0 - 1200*X + 5307*X**2 + 42456*X**3 - 51950*X**4 - 374040*X**5 + 183519*X**6 + &
+									1258416*X**7 - 262440*X**8 - 1749600*X**9 + 128304*X**10 + 839808*X**11))/175.D0
+			ELSEIF (INDX.EQ.8) THEN
+				REF1D = (9.D0*(-100.D0 - 600*X + 13407*X**2 + 53628*X**3 - 169265*X**4 - 609354*X**5 + 669060*X**6 + &
+									2293920*X**7 - 1014768*X**8 - 3382560*X**9 + 513216*X**10 + 1679616*X**11))/560.D0
+			ELSEIF (INDX.EQ.9) THEN
+				REF1D = (100.D0 + 400*X - 14907*X**2 - 39752*X**3 + 270990*X**4 + 650376*X**5 - 1284255*X**6 - &
+									2935440*X**7 + 2152008*X**8 + 4782240*X**9 - 1154736*X**10 - 2519424*X**11)/210.D0
+			ELSEIF (INDX.EQ.10) THEN
+				REF1D = (3.D0*(-25.D0 - 75*X + 3858*X**2 + 7716*X**3 - 78125*X**4 - 140625*X**5 + 454356*X**6 + &
+									778896*X**7 - 874800*X**8 - 1458000*X**9 + 513216*X**10 + 839808*X**11))/700.D0
+			ELSEIF (INDX.EQ.11) THEN
+				REF1D = (-3.D0*(-20.D0 - 48*X + 3135*X**2 + 5016*X**3 - 66550*X**4 - 95832*X**5 + 426195*X**6 + &
+									584496*X**7 - 962280*X**8 - 1283040*X**9 + 641520*X**10 + 839808*X**11))/3850.D0
+			ELSEIF (INDX.EQ.12) THEN
+				REF1D = (-100.D0 - 200*X + 15807*X**2 + 21076*X**3 - 344025*X**4 - 412830*X**5 + 2320164*X**6 + &
+									2651616*X**7 - 5773680*X**8 - 6415200*X**9 + 4618944*X**10 + 5038848*X**11)/92400.D0
+			ENDIF
+		ELSEIF (DIFF.EQ.2) THEN
+			IF (INDX.EQ.0) THEN
+				REF1D = -0.00216450216450216450D0 - (479*X)/1400.D0 + (479*X**2)/700.D0 + (417*X**3)/28.D0 - (1251*X**4)/56.D0 - &
+								(7533*X**5)/50.D0 + (5022*X**6)/25.D0 + (17496*X**7)/35.D0 - (4374*X**8)/7.D0 - (17496*X**9)/35.D0 + (104976*X**10)/175.D0
+			ELSEIF (INDX.EQ.1) THEN
+				REF1D = (-3.D0*(-24.D0 - 3135*X + 7524*X**2 + 133100*X**3 - 239580*X**4 - 1278585*X**5 + 2045736*X**6 + &
+								3849120*X**7 - 5773680*X**8 - 3207600*X**9 + 4618944*X**10))/1925.D0
+			ELSEIF (INDX.EQ.2) THEN
+				REF1D = (3.D0*(-75.D0 - 7716*X + 23148*X**2 + 312500*X**3 - 703125*X**4 - 2726136*X**5 + 5452272*X**6 + &
+								6998400*X**7 - 13122000*X**8 - 5132160*X**9 + 9237888*X**10))/700.D0
+			ELSEIF (INDX.EQ.3) THEN
+				REF1D = (200.D0 + 14907*X - 59628*X**2 - 541980*X**3 + 1625940*X**4 + 3852765*X**5 - 10274040*X**6 - &
+								8608032*X**7 + 21520080*X**8 + 5773680*X**9 - 13856832*X**10)/105.D0
+			ELSEIF (INDX.EQ.4) THEN
+				REF1D = (9.D0*(-300.D0 - 13407*X + 80442*X**2 + 338530*X**3 - 1523385*X**4 - 2007180*X**5 + 8028720*X**6 + &
+								4059072*X**7 - 15221520*X**8 - 2566080*X**9 + 9237888*X**10))/280.D0
+			ELSEIF (INDX.EQ.5) THEN
+				REF1D = (-18.D0*(-600.D0 - 5307*X + 63684*X**2 + 103900*X**3 - 935100*X**4 - 550557*X**5 + 4404456*X**6 + &
+								1049760*X**7 - 7873200*X**8 - 641520*X**9 + 4618944*X**10))/175.D0
+			ELSEIF (INDX.EQ.6) THEN
+				REF1D = (-5369.D0 + 444444.D0*X**2 - 6003855*X**4 + 27243216*X**6 - 47764080*X**8 + 27713664*X**10)/50.D0
+			ELSEIF (INDX.EQ.7) THEN
+				REF1D = (-18.D0*(-600.D0 + 5307*X + 63684*X**2 - 103900*X**3 - 935100*X**4 + 550557*X**5 + 4404456*X**6 - &
+								1049760*X**7 - 7873200*X**8 + 641520*X**9 + 4618944*X**10))/175.D0
+			ELSEIF (INDX.EQ.8) THEN
+				REF1D = (9.D0*(-300.D0 + 13407*X + 80442*X**2 - 338530*X**3 - 1523385*X**4 + 2007180*X**5 + 8028720*X**6 - &
+								4059072*X**7 - 15221520*X**8 + 2566080*X**9 + 9237888*X**10))/280.D0
+			ELSEIF (INDX.EQ.9) THEN
+				REF1D = (200.D0 - 14907*X - 59628*X**2 + 541980*X**3 + 1625940*X**4 - 3852765*X**5 - 10274040*X**6 + &
+								8608032*X**7 + 21520080*X**8 - 5773680*X**9 - 13856832*X**10)/105.D0
+			ELSEIF (INDX.EQ.10) THEN
+				REF1D = (3.D0*(-75.D0 + 7716*X + 23148*X**2 - 312500*X**3 - 703125*X**4 + 2726136*X**5 + 5452272*X**6 - &
+								6998400*X**7 - 13122000*X**8 + 5132160*X**9 + 9237888*X**10))/700.D0
+			ELSEIF (INDX.EQ.11) THEN
+				REF1D = (-3.D0*(-24.D0 + 3135*X + 7524*X**2 - 133100*X**3 - 239580*X**4 + 1278585*X**5 + 2045736*X**6 - &
+								3849120*X**7 - 5773680*X**8 + 3207600*X**9 + 4618944*X**10))/1925.D0
+			ELSEIF (INDX.EQ.12) THEN
+				REF1D = -0.00216450216450216450D0 + (479*X)/1400.D0 + (479*X**2)/700.D0 - (417*X**3)/28.D0 - (1251*X**4)/56.D0 + &
+								(7533*X**5)/50.D0 + (5022*X**6)/25.D0 - (17496*X**7)/35.D0 - (4374*X**8)/7.D0 + &
+								(17496*X**9)/35.D0 + (104976*X**10)/175.D0
+			ENDIF
+		ENDIF
+! 	ELSEIF (IORDER.EQ.14) THEN
+! 		IF (DIFF.EQ.0) THEN
+! 			IF (INDX.EQ.0) THEN
+! 				REF1D = ((-1.0d0 + X)*X*(-6 + 7*X)*(-5 + 7*X)*(-4 + 7*X)*(-3 + 7*X)*(-2 + 7*X)*(-1.0d0 + 7*X)*(1.0d0 + 7*X)*(2 + 7*X)*(3 + 7*X)*(4 + 7*X)*(5 + 7*X)*(6 + 7*X))/1.7791488E9
+! 			ELSEIF (INDX.EQ.1) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.2) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.3) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.4) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.5) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.6) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.7) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.8) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.9) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.10) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.11) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.12) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.13) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.14) THEN
+! 				REF1D = 
+! 			ENDIF
+! 		ELSEIF (DIFF.EQ.1) THEN
+! 			IF (INDX.EQ.0) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.1) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.2) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.3) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.4) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.5) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.6) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.7) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.8) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.9) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.10) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.11) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.12) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.13) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.14) THEN
+! 				REF1D = 
+! 			ENDIF
+! 		ELSEIF (DIFF.EQ.2) THEN
+! 			IF (INDX.EQ.0) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.1) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.2) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.3) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.4) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.5) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.6) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.7) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.8) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.9) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.10) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.11) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.12) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.13) THEN
+! 				REF1D = 
+! 			ELSEIF (INDX.EQ.14) THEN
+! 				REF1D = 
+! 			ENDIF
+! 		ENDIF
+	ENDIF
+
+	111 CONTINUE
+	
+END FUNCTION REF1D
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! NURBS PU WITH FLAT-TOP 
+
+TYPE(FUNCTION_1D) FUNCTION GET_LOCBASIS(X, BSNDX, PATCH)
+
+	REAL*8, INTENT(IN) :: X
+	INTEGER, INTENT(IN) :: BSNDX, PATCH
+	
+	INTEGER :: I, J, K
+	TYPE(FUNCTION_1D) :: REFX
+	REAL*8 :: BSD1X, BSD2X
+	
+	REFX = PATCH_TO_REF1D(X, PATCH)
+	
+	GET_LOCBASIS%VAL(0) = REF1D(REFX%VAL(0), BSNDX, 0)
+	GET_LOCBASIS%VAL(1) = REF1D(REFX%VAL(0), BSNDX, 1)*REFX%VAL(1)
+	GET_LOCBASIS%VAL(2) = REF1D(REFX%VAL(0), BSNDX, 2)*REFX%VAL(1)**2 + REF1D(REFX%VAL(0), BSNDX, 1)*REFX%VAL(2)
+	
+END FUNCTION GET_LOCBASIS
+
+END MODULE INTERPOLATION
