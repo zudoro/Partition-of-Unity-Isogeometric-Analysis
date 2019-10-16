@@ -1,0 +1,41 @@
+MODULE GSQUAD
+
+	implicit integer (i-n)
+	implicit real(8) (a-h,o-z)
+
+CONTAINS
+
+SUBROUTINE GAULEG(X1,X2,X,W,N)
+	INTEGER, INTENT(IN) :: N
+  REAL*8, INTENT(IN) :: X1, X2
+	REAL*8, INTENT(INOUT) :: X(N), W(N)
+	REAL*8 :: PI, P1,P2,P3,PP,XL,XM,Z,Z1
+  REAL*8, PARAMETER :: EPS=5.0D-16
+  INTEGER :: I,J,M
+
+	PI = DACOS(-1.0D0)
+	M=(N+1)/2
+	XM=0.5D0*(X2+X1)
+	XL=0.5D0*(X2-X1)
+	DO I = 1, M
+		Z=DCOS(PI*(I-0.25D0)/(N+0.5D0))
+1   CONTINUE
+		P1=1.0D0
+		P2=0.0D0
+		DO J = 1, N
+			P3=P2
+			P2=P1
+			P1=((2.0D0*J-1.0D0)*Z*P2-(J-1.0D0)*P3)/J
+		ENDDO
+		PP=N*(Z*P1-P2)/(Z*Z-1.0D0)
+		Z1=Z
+		Z=Z1-P1/PP
+		IF(DABS(Z-Z1).GT.EPS)GOTO 1
+		X(I)=XM-XL*Z
+		X(N+1-I)=XM+XL*Z
+		W(I)=2.0D0*XL/((1.0D0-Z*Z)*PP*PP)
+		W(N+1-I)=W(I)
+	ENDDO
+END SUBROUTINE GAULEG
+
+END MODULE GSQUAD
