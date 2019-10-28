@@ -1,0 +1,125 @@
+MODULE LUDECOMPOSITION
+
+	IMPLICIT NONE
+
+CONTAINS
+
+SUBROUTINE LUDCMP(LUA, LUN, NP, INDX, D)
+
+  INTEGER, INTENT(IN) :: LUN, NP
+  INTEGER, INTENT(INOUT) :: INDX(LUN)
+  REAL*8, INTENT(INOUT) :: D, LUA(NP,NP)
+  REAL*8, PARAMETER :: TINY=5.0D-16
+  INTEGER, PARAMETER :: NMAX=10000000
+  INTEGER :: I, IMAX, J, K
+  REAL*8 :: AAMAX, DUM, SUM, VV(NMAX)
+
+  D=1.D0
+  DO I = 1, LUN
+    AAMAX=0.0D0
+    DO J = 1, LUN
+      IF (DABS(LUA(I,J)).GT.AAMAX) THEN
+      	AAMAX=DABS(LUA(I,J))
+      ENDIF
+   ENDDO
+    IF (AAMAX.LE.5.0D-15) THEN 
+		PRINT*, 'SINGULAR MATRIX IN LUDCMP'
+		STOP
+    ENDIF
+    VV(I)=1./AAMAX
+  ENDDO
+  DO J = 1, LUN
+    DO I = 1, J-1
+      SUM=LUA(I,J)
+      DO K = 1, I-1
+        SUM=SUM-LUA(I,K)*LUA(K,J)
+    ENDDO
+      LUA(I,J)=SUM
+  ENDDO
+    AAMAX=0.
+    DO I = J, LUN
+      SUM=LUA(I,J)
+      DO K = 1, J-1
+        SUM=SUM-LUA(I,K)*LUA(K,J)
+    ENDDO
+      LUA(I,J)=SUM
+      DUM=VV(I)*DABS(SUM)
+      IF (DUM.GE.AAMAX) THEN
+        IMAX=I
+        AAMAX=DUM
+      ENDIF
+  ENDDO
+    IF (J.NE.IMAX)THEN
+      DO K = 1, LUN
+        DUM=LUA(IMAX,K)
+        LUA(IMAX,K)=LUA(J,K)
+        LUA(J,K)=DUM
+    ENDDO
+      D=-D
+      VV(IMAX)=VV(J)
+    ENDIF
+    INDX(J)=IMAX
+    IF(LUA(J,J).EQ.0.0D0)LUA(J,J)=TINY
+    IF(J.NE.LUN)THEN
+      DUM=1.0D0/LUA(J,J)
+      DO I=J+1,LUN
+        LUA(I,J)=LUA(I,J)*DUM
+  ENDDO
+    ENDIF
+ENDDO
+
+END SUBROUTINE LUDCMP
+
+SUBROUTINE LUBKSB(A,N,NP,INDX,FB)
+
+	  INTEGER, INTENT(IN) :: N,NP
+	  INTEGER, INTENT(IN) :: INDX(N)
+      REAL*8, INTENT(IN) :: A(NP,NP)
+	  REAL*8, INTENT(INOUT) :: FB(N)
+      INTEGER :: I, II, J, LL
+      REAL*8 :: SUM
+      
+      II=0
+      
+      DO I = 1, N
+        LL=INDX(I)
+        SUM=FB(LL)
+        FB(LL)=FB(I)
+        IF (II.NE.0)THEN
+          DO J = II, I-1
+            SUM=SUM-A(I,J)*FB(J)
+		  ENDDO
+        ELSE IF (SUM.NE.0.D0) THEN
+          II=I
+        ENDIF
+        FB(I)=SUM
+	  ENDDO
+      DO I = N, 1, -1
+        SUM=FB(I)
+        DO J= I+1, N
+          SUM=SUM-A(I,J)*FB(J)
+		ENDDO
+        FB(I)=SUM/A(I,I)
+	  ENDDO
+
+END SUBROUTINE LUBKSB
+
+SUBROUTINE RESIDUALNORM(A,B,F)
+	REAL*8, INTENT(IN) :: A(:,:), B(:), F(:)
+	REAL*8, ALLOCATABLE :: RSDL(:)
+	INTEGER :: I, J, MXL(2), N
+	
+	N = UBOUND(B,1)
+	
+	ALLOCATE(RSDL(N))
+	
+	FORALL(I=1:N) RSDL(I) = DABS(DOT_PRODUCT(A(I,:), B(:)) - F(I))
+	
+	MXL(:) = (/MAXLOC(RSDL(:)), 0/)
+
+	PRINT*, "RESIDUAL NORM : ", RSDL(MXL(1))
+	PRINT*, ""
+	
+END SUBROUTINE RESIDUALNORM
+	
+END MODULE LUDECOMPOSITION
