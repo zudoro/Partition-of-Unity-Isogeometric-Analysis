@@ -1,0 +1,74 @@
+	BASIS_KVEC(1,2,1)%POLY_ORDER = 2
+	BASIS_KVEC(1,2,2)%POLY_ORDER = 2
+	
+	BASIS_KVEC(1,2,1)%LENGTH = 19
+	BASIS_KVEC(1,2,2)%LENGTH = 7
+	
+	BASIS_KVEC(1,2,1)%KNOTS(0:BASIS_KVEC(1,2,1)%LENGTH) = (/0.D0, 0.D0, 0.D0, (1.0D0/8.D0), (1.0D0/8.D0), (2.0D0/8.D0), (2.0D0/8.D0), (3.0D0/8.D0), (3.0D0/8.D0), (4.0D0/8.D0), (4.0D0/8.D0), (5.D0/8.D0), (5.D0/8.D0), (6.0D0/8.D0), (6.0D0/8.D0), (7.0D0/8.D0), (7.0D0/8.D0), 1.0D0, 1.0D0, 1.0D0/)
+	BASIS_KVEC(1,2,2)%KNOTS(0:BASIS_KVEC(1,2,2)%LENGTH) = (/0.D0, 0.D0, 0.D0, 0.50D0, 0.50D0, 1.0D0, 1.0D0, 1.0D0/)
+	
+	
+! SET CONTROL POINTS AND WEIGTH
+	BASIS_CTL(1,2)%D=2
+	BASIS_CTL(1,2)%PTS(0:16,0:1,0) = POINT2D(0.0D0,0.0D0)
+
+	DO J=0, 2
+		DO I=0, 16
+			IF (MOD(I,2).EQ.0) THEN
+				BASIS_CTL(1,2)%WGTS(I,J,0) = 1.0D0
+			ELSE
+				BASIS_CTL(1,2)%WGTS(I,J,0) = DCOS(22.50D0*DEGREE)
+			ENDIF
+		ENDDO
+	ENDDO
+	BASIS_CTL(1,2)%WGTS(0:16,3:4,0) = 1.0D0
+	
+	! CONTROL POINTS
+	BASIS_CTL(1,2)%PTS(0:8,2,0) = (/POINT2D(-0.50D0,																		0.0D0), &
+																			POINT2D(-0.50D0,																		(2.0D0-DSQRT(2.0D0))/(2.0D0*DSQRT(2.0D0))), &
+																			POINT2D(-1.0D0/(2.0D0*DSQRT(2.0D0)),								1.0D0/(2.0D0*DSQRT(2.0D0))), &
+																			POINT2D((DSQRT(2.0D0)-2.0D0)/(2.0D0*DSQRT(2.0D0)),	0.50D0), &
+																			POINT2D(0.D0,																				0.50D0), &
+																			POINT2D((2.0D0-DSQRT(2.0D0))/(2.0D0*DSQRT(2.0D0)),	0.50D0), &
+																			POINT2D(1.0D0/(2.0D0*DSQRT(2.0D0)),									1.0D0/(2.0D0*DSQRT(2.0D0))),&
+																			POINT2D(0.50D0,																			(2.0D0-DSQRT(2.0D0))/(2.0D0*DSQRT(2.0D0))), &
+																			POINT2D(0.50D0,																			0.D0)/)
+																			
+	BASIS_CTL(1,2)%PTS(0:8,4,0) = (/POINT2D(-2.0D0,0.D0),	POINT2D(-2.0D0, 2.0D0*DTAN(22.5D0*DEGREE)), &
+																			POINT2D(-2.0D0,2.0D0),POINT2D(-2.0D0*DTAN(22.5D0*DEGREE),2.0D0), &
+																			POINT2D(0.D0,2.0D0),	POINT2D(2.0D0*DTAN(22.5D0*DEGREE),2.0D0), &
+																			POINT2D(2.0D0,2.0D0),	POINT2D(2.0D0,2.0D0*DTAN(22.5D0*DEGREE)), &
+																			POINT2D(2.0D0,0.D0)/)
+	
+	DO I = 9, 16
+		DO J = 2, 4, 2
+			BASIS_CTL(1,2)%PTS(I,J,0) = POINT2D(BASIS_CTL(1,2)%PTS(16-I,J,0)%X, -BASIS_CTL(1,2)%PTS(16-I,J,0)%Y)
+		ENDDO
+	ENDDO
+
+	DO I = 0, 16
+		BASIS_CTL(1,2)%PTS(I,4,0) = 0.50D0*BASIS_CTL(1,2)%PTS(I,4,0)
+	ENDDO
+	
+	DO I = 0, 16
+		DO J = 3, 3
+			BASIS_CTL(1,2)%PTS(I,J,0) = 0.50D0*(BASIS_CTL(1,2)%PTS(I,J-1,0) + BASIS_CTL(1,2)%PTS(I,J+1,0))
+		ENDDO
+	ENDDO
+	
+	! Rotate the image
+	DO I = 0, 16
+		DO J = 0, 4
+			BASIS_CTL(1,2)%PTS(I,J,0) = ROTATION(BASIS_CTL(1,2)%PTS(I,J,0), 90.0D0*DEGREE)
+		ENDDO
+	ENDDO
+	
+	! Scale the size of image
+	DO I = 0, 16
+		DO J = 0, 4
+			BASIS_CTL(1,2)%PTS(I,J,0) = 
+		ENDDO
+	ENDDO
+	
+	
+	
